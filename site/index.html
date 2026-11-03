@@ -219,6 +219,12 @@ dl.kv dd{margin:0;overflow-wrap:anywhere}
 .addr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .addr code{font-size:.78rem;background:var(--code);padding:9px 11px;border-radius:var(--r);overflow-wrap:anywhere;flex:1 1 260px}
 
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:start}
+.grid3 .field{align-content:start}
+.switch{width:46px;height:26px;border-radius:999px;border:1px solid var(--rule);background:var(--code);position:relative;cursor:pointer;flex:none}
+.switch span{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:transform .15s}
+.switch[aria-checked="true"]{background:var(--accent-fill);border-color:var(--accent-fill)}
+.switch[aria-checked="true"] span{transform:translateX(20px);background:var(--on-accent)}
 /* sign in */
 .signin{max-width:420px;margin:24px auto 0;border:1px solid var(--ink);background:var(--sheet);border-radius:var(--r);padding:28px;display:grid;gap:16px}
 .gbtn{justify-content:center;width:100%;padding:13px}
@@ -244,7 +250,7 @@ footer.foot .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:
   .rail .who{display:none}
   .tiles{grid-template-columns:minmax(0,1fr)}
   .tiles > div+div{border-left:0;border-top:1px solid var(--rule)}
-  .methods{grid-template-columns:minmax(0,1fr)}
+  .methods,.grid3{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:560px){
   .toolgrid{grid-template-columns:minmax(0,1fr)}
@@ -434,7 +440,8 @@ const state = {
   activity:[["2026-11-01","Top-up · card","5.08","5.00"],["2026-11-01","Sign-up credit","0.00","0.00"]],
   client:"claude-code", apiFilter:"all", apiQuery:"", openApi:"bfa/near-account",
   draft:null, newSecret:null,
-  topup:{ amount:10, method:"card" }
+  topup:{ amount:10, method:"card" },
+  auto:{ on:true, below:"2.00", add:"10.00", monthly:"50.00", source:"card", usedThisMonth:"10.15" }
 };
 
 /* ---------- helpers ---------- */
@@ -605,7 +612,7 @@ overview(){ const k=state.keys.filter(k=>k.status==="active"); const spent=0.022
   return consoleWrap("overview", `
   <div class="tiles">
     <div><p class="label">Available</p><b>${usd2(state.balance-state.held)}</b><p class="sub">${usd2(state.balance)} balance · ${usd2(state.held)} held for open payment channels</p></div>
-    <div><p class="label">Spent today</p><b>${meter(spent)}</b><div class="bar"><i style="width:${Math.max(2,spent/cap*100)}%"></i></div><p class="sub">of ${usd2(cap)} across all active keys</p></div>
+    <div><p class="label">Spent today</p><b>${meter(spent)}</b><div class="bar"><i style="width:${Math.max(2,spent/cap*100)}%"></i></div><p class="sub">of ${usd2(cap)} across all active keys · auto top-up ${state.auto.on?"on":"off"}</p></div>
     <div><p class="label">Active keys</p><b>${k.length}</b><p class="sub">${k[0] ? `next expiry ${k[0].expires}` : "create one to start"}</p></div>
   </div>
   <div class="section"><div class="hd"><h3>Recent calls</h3><button class="btn small ghost" data-go="usage">All usage</button></div>${receiptsTable(4)}</div>
@@ -661,6 +668,7 @@ wallet(){ const t=state.topup, fee=Math.round(t.amount*100*BFA_FEE)/100, total=+
     </div>
     <div class="pf"><button class="btn accent" id="pay" ${t.amount>=5?"":"disabled"}>${t.method==="card"?`Continue to payment · ${usd2(total)}`:t.method==="base"?"I've sent it":`Get a NEAR Intents quote`}</button></div>
   </div>
+  ${autoPanel()}
   <div class="section"><div class="hd"><h3>Top-up history</h3></div>
   <div class="tbox"><table style="min-width:520px"><thead><tr><th>Date</th><th>Activity</th><th class="r">Paid</th><th class="r">Credited</th></tr></thead>
   <tbody>${state.activity.map(([d,a,p,c])=>`<tr><td class="sub">${d}</td><td>${esc(a)}</td><td class="r num">${usd2(p)}</td><td class="r num">${usd2(c)}</td></tr>`).join("")}</tbody></table></div></div>`); },
@@ -674,6 +682,36 @@ usage(){ return consoleWrap("usage", `
   <div class="section"><div class="hd"><h3>Receipts</h3><span class="sub">Real testnet receipts from payer 0xcB9f…21cA</span></div>${receiptsTable(99)}</div>
   <p class="sub" style="margin-top:12px">Rows with a transaction are payment-channel deposits, signed by NEAR Chain Signatures. Other calls are vouchers against that deposit.</p>`); }
 };
+
+
+function autoPanel(){ const a=state.auto, add=parseFloat(a.add)||0, fee=Math.round(add*100*BFA_FEE)/100, pay=(add+fee);
+  return `<div class="panel" id="autopanel">
+    <div class="ph"><div><h3>Auto top-up</h3><p class="sub" style="margin-top:2px">Keeps your agents running. You set the trigger and a monthly cap.</p></div>
+      <button class="switch" id="autotoggle" role="switch" aria-checked="${a.on}" aria-label="Auto top-up"><span></span></button></div>
+    ${a.on ? `<div class="pb">
+      <div class="grid3">
+        <label class="field"><span>When available drops below</span><div class="money"><span>$</span><input id="abelow" inputmode="decimal" value="${esc(a.below)}"></div></label>
+        <label class="field"><span>Add to your wallet</span><div class="money"><span>$</span><input id="aadd" inputmode="decimal" value="${esc(a.add)}"></div><small>You pay ${usd2(pay)} with the 1.5% fee.</small></label>
+        <label class="field"><span>Never charge more than</span><div class="money"><span>$</span><input id="amonthly" inputmode="decimal" value="${esc(a.monthly)}"></div><small>per calendar month, fees included</small></label>
+      </div>
+      <div class="field"><span>Pay from</span>
+        <div class="seg">${[["card","Saved card"],["wallet","USDC allowance from another wallet"]].map(([v,l])=>`<button data-asrc="${v}" aria-pressed="${a.source===v}">${l}</button>`).join("")}</div>
+        <small>${a.source==="card" ? "The card you save at the on-ramp is charged; the USDC still lands in your own wallet." : "Approve a spending allowance once from a wallet you hold elsewhere. BFA's contract can pull only the top-up amount plus fee, only to your top-up address, and only up to your monthly cap."}</small>
+      </div>
+      <div class="calc"><div><span>Used this month</span><span class="num">${usd2(a.usedThisMonth)} of ${usd2(a.monthly)}</span></div>
+        <div class="bar" style="margin-top:0"><i style="width:${Math.min(100,(parseFloat(a.usedThisMonth)||0)/(parseFloat(a.monthly)||1)*100)}%"></i></div></div>
+      <p class="sub">When your available balance drops below ${usd2(a.below)}, BFA adds ${usd2(add)} (you pay ${usd2(pay)}). If that would pass ${usd2(a.monthly)} this month, nothing is charged and your keys get <span class="mono">top_up</span> until you add funds.</p>
+    </div>
+    <div class="pf"><span class="sub" style="margin-right:auto;align-self:center" id="aerr"></span><button class="btn solid small" id="autosave">Save auto top-up</button></div>` :
+    `<div class="pb"><p class="sub">Off. Your keys stop with <span class="mono">top_up</span> when the balance runs out.</p></div>`}
+  </div>`; }
+function syncAuto(validate){ const a=state.auto; if (!$("#abelow")) return true;
+  a.below=$("#abelow").value; a.add=$("#aadd").value; a.monthly=$("#amonthly").value;
+  if (!validate) return true; const err=$("#aerr"), b=parseFloat(a.below), d=parseFloat(a.add), m=parseFloat(a.monthly);
+  if (!(b>=0)) { err.textContent="Set the trigger to $0 or more."; return false; }
+  if (!(d>=5)) { err.textContent="Auto top-ups add at least $5."; return false; }
+  if (!(m>=d*(1+BFA_FEE))) { err.textContent=`The monthly cap must cover at least one top-up (${usd2(d*(1+BFA_FEE))}).`; return false; }
+  return true; }
 
 function apiDetail(a){ const r=a.review; return `
   <article class="detail" aria-label="${esc(a.name)}">
@@ -795,6 +833,9 @@ document.addEventListener("click", e => {
   if (t.dataset.revoke) { const k = state.keys[+t.dataset.revoke]; k.status = "revoked"; render(); toast(`Revoked ${k.name}. Calls with it now fail with key_revoked.`); return; }
   if (t.dataset.amt) { state.topup.amount = +t.dataset.amt; render(); return; }
   if (t.dataset.method) { state.topup.method = t.dataset.method; render(); return; }
+  if (t.id === "autotoggle") { syncAuto(); state.auto.on = !state.auto.on; render(); toast(state.auto.on ? "Auto top-up is on" : "Auto top-up is off"); return; }
+  if (t.dataset.asrc) { syncAuto(); state.auto.source = t.dataset.asrc; render(); return; }
+  if (t.id === "autosave") { if (syncAuto(true)) { render(); toast("Auto top-up saved (preview)"); } return; }
   if (t.id === "pay") { toast(state.topup.method==="card" ? "Preview: the Privy on-ramp opens here once it's connected" : state.topup.method==="base" ? "Preview: BFA credits your balance when the deposit confirms" : "Preview: a NEAR Intents quote appears here"); return; }
 });
 document.addEventListener("keydown", e => { const r = e.target.closest?.("tr[data-api]"); if (r && (e.key==="Enter"||e.key===" ")) { e.preventDefault(); r.click(); } });
