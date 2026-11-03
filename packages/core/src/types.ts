@@ -110,7 +110,10 @@ export interface Receipt {
   http_status?: number;
   /** Whether the response body matched the listing's output_schema. Feeds provider reputation. */
   output_valid?: boolean;
+  /** Total wall time of the call, including the seller's own work. */
   latency_ms: number;
+  /** Time spent creating the payment (deposit via NEAR MPC, or a local voucher), separate from the seller's work. */
+  sign_ms?: number;
   started_at: string;
   error?: NenErrorShape;
 }

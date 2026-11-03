@@ -11,8 +11,7 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { ReceiptLog } from "@nen-near/core";
-import { Account } from "near-api-js";
-import { callListing, chainSignaturesSigner, loadOrCreateSessionSigner, nearMpc, NETWORKS } from "../dist/index.js";
+import { callListing, chainSignaturesSigner, loadOrCreateSessionSigner, nearAccount, nearMpc, NETWORKS } from "../dist/index.js";
 
 const accountId = process.env.NEAR_ACCOUNT_ID;
 if (!accountId) throw new Error("set NEAR_ACCOUNT_ID");
@@ -23,7 +22,8 @@ const state = process.env.NEN_STATE_DIR ?? join(homedir(), ".nen");
 const calls = Number(process.env.CALLS ?? 5);
 const sellerUrl = process.env.SELLER_URL ?? "http://localhost:8402/near/account";
 
-const account = new Account(accountId, process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org", privateKey);
+const rpcUrls = process.env.NEAR_RPC_URLS?.split(",").map((u) => u.trim()).filter(Boolean);
+const account = nearAccount({ accountId, privateKey, networkId: "testnet", ...(rpcUrls && { rpcUrls }) });
 const signer = await chainSignaturesSigner({
   mpc: nearMpc({ networkId: "testnet", caller: account }),
   predecessor: accountId,
@@ -65,6 +65,7 @@ for (let i = 1; i <= calls; i++) {
       scheme: receipt.scheme,
       price_usd: receipt.price_usd,
       latency_ms: receipt.latency_ms,
+      sign_ms: receipt.sign_ms,
       payment_tx: receipt.payment_tx,
       error: receipt.error?.message,
       exists: data?.exists,

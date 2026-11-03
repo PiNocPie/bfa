@@ -95,8 +95,10 @@ function buildPayingFetch(
   signer: NenSigner,
   fetchImpl: typeof fetch,
   session: SessionConfig | undefined,
-): { fetch: typeof fetch; usedScheme: () => X402Scheme | undefined } {
+): { fetch: typeof fetch; usedScheme: () => X402Scheme | undefined; signMs: () => number | undefined } {
   let used: X402Scheme | undefined;
+  let signStart: number | undefined;
+  let signMs: number | undefined;
   const maxAtomic = usdToMicros(listing.pricing.amount_usd); // USDC has 6 decimals: atomic units == micro-USD
   const exact = new ExactEvmScheme(signer);
   const client = new x402Client();
@@ -131,10 +133,18 @@ function buildPayingFetch(
       )
       .sort((a, b) => (SCHEME_RANK[a.scheme] ?? 9) - (SCHEME_RANK[b.scheme] ?? 9)),
   );
+  client.onBeforePaymentCreation(async () => {
+    signStart = Date.now();
+  });
   client.onAfterPaymentCreation(async (ctx) => {
     used = ctx.selectedRequirements.scheme as X402Scheme;
+    if (signStart !== undefined) signMs = Date.now() - signStart;
   });
-  return { fetch: wrapFetchWithPayment(fetchImpl, client) as typeof fetch, usedScheme: () => used };
+  return {
+    fetch: wrapFetchWithPayment(fetchImpl, client) as typeof fetch,
+    usedScheme: () => used,
+    signMs: () => signMs,
+  };
 }
 
 function buildRequest(listing: Listing, input: Record<string, unknown>): { url: string; init: RequestInit } {
@@ -166,7 +176,7 @@ function readSettlement(res: Response): { tx?: string; network?: string; payer?:
 }
 
 type Outcome = Pick<Receipt, "status" | "price_usd"> &
-  Partial<Pick<Receipt, "scheme" | "network" | "payment_tx" | "http_status" | "output_valid" | "error">>;
+  Partial<Pick<Receipt, "scheme" | "sign_ms" | "network" | "payment_tx" | "http_status" | "output_valid" | "error">>;
 
 /** Call one listing, pay per call over x402, and always write exactly one receipt. */
 export async function callListing(opts: CallOptions): Promise<CallResult> {
@@ -220,9 +230,11 @@ export async function callListing(opts: CallOptions): Promise<CallResult> {
   const settled = readSettlement(res);
   const price_usd = settled ? listing.pricing.amount_usd : "0";
   const scheme = paying.usedScheme();
+  const signMs = paying.signMs();
   const paidFields = settled
     ? {
         ...(scheme && { scheme }),
+        ...(signMs !== undefined && { sign_ms: signMs }),
         ...(settled.tx && { payment_tx: settled.tx }),
         ...(settled.network && { network: settled.network }),
       }
