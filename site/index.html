@@ -2,506 +2,742 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700&family=Albert+Sans:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: one column ledger. Hero = a real agent transcript printed like a receipt; below it the catalog table, agent setup, receipts and the seller checklist. */
+/* Layout: a metered ledger. Sage paper, copper meter needle, every price printed to USDC's 6 decimals.
+   Public pages (home, APIs) on top; signed-in console (overview, keys, wallet, usage) with a left rail. */
 :root{
-  --paper:#f5f6f8; --sheet:#ffffff; --ink:#141a2e; --muted:#5b6378; --rule:#dde1ea;
-  --accent:#2f3fd0; --accent-soft:#e6e9fb;
-  --ok:#11795a; --ok-soft:#e1f3ec; --warn:#9a5a00; --warn-soft:#fbefd9; --bad:#b4232f; --bad-soft:#fbe5e7;
-  --code:#eef0f5;
-  --f-display:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
-  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --paper:#eceee7; --sheet:#fafaf6; --ink:#161a14; --muted:#5b6256; --faint:#8a9184; --rule:#d5d9cd;
+  --copper:#b4532a; --copper-soft:#f3e2d8; --on-copper:#fffaf5;
+  --ok:#2b7a4b; --ok-soft:#dcefe2; --info:#3d5d99; --info-soft:#e0e7f5; --bad:#b3362b; --bad-soft:#f6e0dc;
+  --code:#e4e7dd;
+  --f-mono:"Martian Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --f-body:"Albert Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:6px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#0f1220; --sheet:#171b2d; --ink:#e7e9f2; --muted:#9aa1b8; --rule:#2a3048;
-  --accent:#8f9bff; --accent-soft:#232a52;
-  --ok:#4fd1a1; --ok-soft:#123629; --warn:#f2b35b; --warn-soft:#3a2a10; --bad:#ff8790; --bad-soft:#3d1a20;
-  --code:#1e2338; color-scheme:dark}}
+  --paper:#111410; --sheet:#191d17; --ink:#e7eae0; --muted:#9ba393; --faint:#6f776a; --rule:#2b3128;
+  --copper:#e2804f; --copper-soft:#3a2219; --on-copper:#1a0f09;
+  --ok:#6fcf97; --ok-soft:#163222; --info:#93b2ff; --info-soft:#1c2740; --bad:#ff8c7d; --bad-soft:#3b1c18;
+  --code:#20251e; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --paper:#0f1220; --sheet:#171b2d; --ink:#e7e9f2; --muted:#9aa1b8; --rule:#2a3048;
-  --accent:#8f9bff; --accent-soft:#232a52;
-  --ok:#4fd1a1; --ok-soft:#123629; --warn:#f2b35b; --warn-soft:#3a2a10; --bad:#ff8790; --bad-soft:#3d1a20;
-  --code:#1e2338; color-scheme:dark}
+  --paper:#111410; --sheet:#191d17; --ink:#e7eae0; --muted:#9ba393; --faint:#6f776a; --rule:#2b3128;
+  --copper:#e2804f; --copper-soft:#3a2219; --on-copper:#1a0f09;
+  --ok:#6fcf97; --ok-soft:#163222; --info:#93b2ff; --info-soft:#1c2740; --bad:#ff8c7d; --bad-soft:#3b1c18;
+  --code:#20251e; color-scheme:dark}
 
 *{box-sizing:border-box}
+html,body{min-height:100%}
 body{background:var(--paper);color:var(--ink);font:400 15px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
-.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-a{color:var(--accent);text-underline-offset:2px}
-a:focus-visible,button:focus-visible,input:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
-h2{font-size:1.6rem;font-weight:800}
-h3{font-size:1.05rem;font-weight:700}
+a{color:inherit;text-underline-offset:3px;text-decoration-color:var(--copper)}
+:focus-visible{outline:2px solid var(--copper);outline-offset:2px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font:700 clamp(1.9rem,4.4vw,3.1rem)/1.08 var(--f-mono);letter-spacing:-.04em}
+h2{font:700 1.35rem/1.2 var(--f-mono);letter-spacing:-.03em}
+h3{font:600 1rem/1.3 var(--f-body)}
 p{margin:0}
-.mono,code,pre{font-family:var(--f-mono);font-size:.86em}
+code,pre,.mono{font-family:var(--f-mono);font-size:.8em}
 .num{font-variant-numeric:tabular-nums}
-.eyebrow{font:500 .72rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.label{font:500 .66rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
-/* header */
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
-header.top .wrap{display:flex;align-items:center;gap:20px;padding-block:12px;flex-wrap:wrap}
-.logo{font:800 1.35rem/1 var(--f-display);color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:8px}
-.logo .mark{width:22px;height:22px;border-radius:6px;background:var(--accent);display:grid;place-items:center;color:var(--sheet);font-size:.8rem}
-nav.links{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem}
-nav.links a{color:var(--muted);text-decoration:none}
-nav.links a:hover{color:var(--ink)}
-.net{margin-left:auto;font:500 .72rem/1 var(--f-mono);padding:6px 9px;border-radius:999px;background:var(--warn-soft);color:var(--warn);white-space:nowrap}
+/* top bar */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:20;background:var(--paper)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--paper);border-bottom:1px solid var(--ink)}
+.top .wrap{display:flex;align-items:center;gap:22px;padding-block:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:8px;text-decoration:none;font:700 1.15rem/1 var(--f-mono);letter-spacing:-.04em}
+.brand i{font-style:normal;font:500 .62rem/1 var(--f-mono);color:var(--copper);letter-spacing:.06em}
+.navlinks{display:flex;gap:18px;flex-wrap:wrap;font-size:.92rem}
+.navlinks a{text-decoration:none;color:var(--muted);padding-block:4px;border-bottom:2px solid transparent}
+.navlinks a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--copper)}
+.top .right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.net{font:500 .64rem/1 var(--f-mono);letter-spacing:.06em;padding:6px 8px;border:1px dashed var(--muted);border-radius:999px;color:var(--muted);white-space:nowrap}
 
-section{padding-block:56px;border-bottom:1px solid var(--rule)}
-section:last-of-type{border-bottom:0}
-.sec-head{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;max-width:68ch}
-.sec-head p{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;font:600 .9rem/1 var(--f-body);padding:11px 15px;border-radius:var(--r);border:1px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--sheet)}
+.btn.solid{background:var(--ink);color:var(--paper)}
+.btn.solid:hover{background:var(--copper);border-color:var(--copper);color:var(--on-copper)}
+.btn.copper{background:var(--copper);border-color:var(--copper);color:var(--on-copper)}
+.btn.small{padding:7px 10px;font-size:.8rem}
+.btn.ghost{border-color:var(--rule)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
 
-/* hero */
-.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;align-items:start;padding-block:56px 48px}
-.hero h1{font-size:clamp(2.1rem,4.6vw,3.4rem);font-weight:800;line-height:1.05}
-.hero h1 em{font-style:normal;color:var(--accent)}
-.hero .lede{font-size:1.08rem;color:var(--muted);max-width:52ch;margin-top:18px}
-.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
-.btn{font:600 .92rem/1 var(--f-body);padding:12px 16px;border-radius:8px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer;text-decoration:none}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--sheet)}
-.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:34px;border-top:1px solid var(--rule)}
-.facts div{padding:14px 14px 0 0}
-.facts b{display:block;font:700 1.5rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
-.facts span{font-size:.82rem;color:var(--muted)}
+.view{padding-block:40px 64px}
+.preview-note{font:500 .7rem/1.4 var(--f-mono);color:var(--muted);border-left:3px solid var(--copper);padding:6px 10px;background:var(--sheet);margin-bottom:22px}
 
-.receipt{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;box-shadow:0 18px 40px -24px rgba(20,26,46,.35);position:relative;min-width:0}
-.receipt::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:radial-gradient(circle at 6px 0,transparent 6px,var(--sheet) 6.5px) -6px 0/12px 8px repeat-x}
-.receipt .rh{display:flex;justify-content:space-between;gap:8px;padding:12px 16px;border-bottom:1px dashed var(--rule);font:500 .72rem/1.3 var(--f-mono);color:var(--muted)}
-.transcript{list-style:none;margin:0;padding:6px 0 10px;font:400 .8rem/1.5 var(--f-mono)}
-.transcript li{display:grid;grid-template-columns:5.6rem minmax(0,1fr) auto;gap:10px;padding:7px 16px;align-items:baseline}
-.transcript li+li{border-top:1px dotted var(--rule)}
-.transcript .tool{color:var(--accent);font-weight:500}
-.transcript .out{color:var(--ink);overflow-wrap:anywhere}
-.transcript .t{color:var(--muted);white-space:nowrap}
-.receipt .rf{padding:10px 16px 16px;border-top:1px dashed var(--rule);font:400 .74rem/1.5 var(--f-mono);color:var(--muted)}
+/* meter readout: USDC has 6 decimals; padding zeros are faint */
+.meter{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.meter .z{color:var(--faint)}
 
 /* pills */
-.pill{display:inline-flex;align-items:center;gap:6px;font:500 .74rem/1 var(--f-mono);padding:5px 8px;border-radius:999px;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:6px;font:500 .68rem/1 var(--f-mono);padding:5px 8px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
 .pill.ok{background:var(--ok-soft);color:var(--ok)}
-.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.info{background:var(--info-soft);color:var(--info)}
 .pill.bad{background:var(--bad-soft);color:var(--bad)}
 .pill.plain{background:var(--code);color:var(--muted)}
-.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.plain::before{background:var(--faint)}
 
-/* catalog */
-.tools-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-.search{flex:1 1 260px;min-width:0;font:400 .95rem var(--f-body);padding:11px 13px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink)}
-.chip{font:500 .8rem/1 var(--f-body);padding:8px 11px;border-radius:999px;border:1px solid var(--rule);background:var(--sheet);color:var(--muted);cursor:pointer}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-.table-box{overflow-x:auto;background:var(--sheet);border:1px solid var(--rule);border-radius:10px}
-table{border-collapse:collapse;width:100%;min-width:720px}
-th{font:500 .7rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:12px 14px;border-bottom:1px solid var(--rule);white-space:nowrap}
-td{padding:14px;border-bottom:1px solid var(--rule);vertical-align:top}
+/* tables */
+.tbox{overflow-x:auto;border:1px solid var(--rule);border-radius:var(--r);background:var(--sheet)}
+table{border-collapse:collapse;width:100%}
+th{font:500 .64rem/1 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);text-align:left;padding:12px 14px;border-bottom:1px solid var(--rule);white-space:nowrap;background:var(--paper)}
+td{padding:13px 14px;border-bottom:1px solid var(--rule);vertical-align:top}
 tr:last-child td{border-bottom:0}
-td.price{font-family:var(--f-mono);text-align:right;white-space:nowrap}
-th.r{text-align:right}
-tr.row{cursor:pointer}
-tr.row:hover td{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
-tr.row.dim .name{color:var(--muted)}
-.name{font-weight:600}
-.sub{font-size:.82rem;color:var(--muted)}
-.caret{display:inline-block;transition:transform .15s;color:var(--muted)}
-tr.row[aria-expanded="true"] .caret{transform:rotate(90deg)}
-tr.detail td{background:var(--paper);padding:0}
-.empty{padding:24px;color:var(--muted);text-align:center}
+.r{text-align:right}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--paper)}
+.sub{font-size:.8rem;color:var(--muted)}
+.tid{font-family:var(--f-mono);font-size:.74rem;color:var(--muted)}
 
-/* listing detail */
-.detail-in{padding:22px;display:flex;flex-direction:column;gap:20px}
-.status-line{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.88rem}
-.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--rule);border-radius:8px;background:var(--sheet)}
-.tiles div{padding:12px 14px;min-width:0}
-.tiles div+div{border-left:1px solid var(--rule)}
-.tiles b{display:block;font:700 1.05rem/1.2 var(--f-display);font-variant-numeric:tabular-nums}
-.tiles span{font-size:.76rem;color:var(--muted)}
-.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
-.block{display:flex;flex-direction:column;gap:8px;min-width:0}
-pre{margin:0;background:var(--code);border-radius:8px;padding:12px 14px;overflow-x:auto;line-height:1.5;color:var(--ink)}
-dl.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;margin:0;font-size:.88rem}
+/* home */
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:48px;align-items:end;padding-block:28px 40px;border-bottom:1px solid var(--rule)}
+.hero .lede{font-size:1.1rem;color:var(--muted);max-width:50ch;margin-top:18px}
+.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.ticket{background:var(--sheet);border:1px solid var(--ink);border-radius:2px;position:relative;font:400 .74rem/1.55 var(--f-mono);min-width:0}
+.ticket header{display:flex;justify-content:space-between;gap:8px;padding:10px 14px;border-bottom:1px dashed var(--ink)}
+.ticket ol{list-style:none;margin:0;padding:8px 0}
+.ticket li{display:grid;grid-template-columns:5.2rem minmax(0,1fr) auto;gap:10px;padding:5px 14px;align-items:baseline}
+.ticket li b{font-weight:500;color:var(--copper)}
+.ticket li span:nth-child(2){overflow-wrap:anywhere}
+.ticket footer{border-top:1px dashed var(--ink);padding:10px 14px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ticket::before,.ticket::after{content:"";position:absolute;top:38px;width:14px;height:14px;border-radius:50%;background:var(--paper);border:1px solid var(--ink)}
+.ticket::before{left:-8px;clip-path:inset(0 0 0 50%)}
+.ticket::after{right:-8px;clip-path:inset(0 50% 0 0)}
+
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid var(--rule)}
+.facts div{padding:22px 18px 22px 0;min-width:0}
+.facts div+div{padding-left:18px;border-left:1px solid var(--rule)}
+.facts b{display:block;font:700 1.45rem/1.1 var(--f-mono);letter-spacing:-.03em}
+.facts span{font-size:.84rem;color:var(--muted)}
+
+.rows{display:grid;gap:0}
+.row3{display:grid;grid-template-columns:12rem minmax(0,1fr) minmax(0,1fr);gap:28px;padding-block:32px;border-bottom:1px solid var(--rule)}
+.row3 > div{min-width:0}
+.row3 h2{font-size:1.05rem}
+.row3 p{color:var(--muted)}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:2rem minmax(0,1fr);gap:8px;align-items:baseline}
+.steps li::before{content:counter(s,decimal-leading-zero);font:500 .72rem/1 var(--f-mono);color:var(--copper)}
+
+/* APIs page */
+.page-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.page-head p{color:var(--muted);max-width:62ch;margin-top:8px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.input,select,.search{font:400 .92rem var(--f-body);padding:10px 12px;border:1px solid var(--rule);border-radius:var(--r);background:var(--sheet);color:var(--ink);min-width:0}
+.search{flex:1 1 240px}
+.chip{font:500 .78rem/1 var(--f-body);padding:8px 11px;border-radius:999px;border:1px solid var(--rule);background:transparent;color:var(--muted);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.api-name{font-weight:600}
+.detail{border:1px solid var(--ink);border-radius:var(--r);background:var(--sheet);margin-top:18px}
+.detail .dh{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px;border-bottom:1px solid var(--rule)}
+.detail .db{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0}
+.detail .db > div{padding:18px;min-width:0}
+.detail .db > div + div{border-left:1px solid var(--rule)}
+.statline{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid var(--rule)}
+.statline div{padding:14px 18px;min-width:0}
+.statline div+div{border-left:1px solid var(--rule)}
+.statline b{display:block;font:500 .95rem/1.3 var(--f-mono)}
+.statline span{font-size:.76rem;color:var(--muted)}
+pre{margin:0;background:var(--code);border-radius:var(--r);padding:12px 14px;overflow-x:auto;line-height:1.55;color:var(--ink)}
+dl.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:7px 16px;margin:0;font-size:.88rem}
 dl.kv dt{color:var(--muted)}
 dl.kv dd{margin:0;overflow-wrap:anywhere}
-.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:.86rem}
-.checks li{display:grid;grid-template-columns:1.3rem 9.5rem minmax(0,1fr);gap:8px;align-items:baseline}
-.checks .ic{font-family:var(--f-mono);font-weight:500}
-.checks .ic.y{color:var(--ok)} .checks .ic.n{color:var(--bad)}
-.checks .id{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
-.checks .fix{display:block;color:var(--bad);font-size:.8rem}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:.84rem}
+.checks li{display:grid;grid-template-columns:1.2rem 8.6rem minmax(0,1fr);gap:8px;align-items:baseline}
+.checks .y{color:var(--ok);font-family:var(--f-mono)} .checks .n{color:var(--bad);font-family:var(--f-mono)}
+.checks .id{font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
+.stack{display:grid;gap:10px}
+.toolgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--rule);border-radius:var(--r);background:var(--sheet)}
+.toolgrid div{padding:14px 16px;border-bottom:1px solid var(--rule);min-width:0}
+.toolgrid div:nth-child(odd){border-right:1px solid var(--rule)}
+.toolgrid div:nth-last-child(-n+2){border-bottom:0}
+.toolgrid code{color:var(--copper);font-weight:500;font-size:.82rem}
+.toolgrid p{font-size:.86rem;color:var(--muted);margin-top:4px}
 
-/* agents */
-.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
-.codecard{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;overflow:hidden;min-width:0}
-.codecard .bar{display:flex;justify-content:space-between;align-items:center;padding:8px 10px 8px 14px;border-bottom:1px solid var(--rule)}
-.codecard pre{border-radius:0;background:transparent;font-size:.8rem}
-.copy{font:500 .76rem/1 var(--f-body);padding:7px 10px;border-radius:6px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
-.toollist{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
-.toollist li{display:grid;grid-template-columns:8.5rem 3.6rem minmax(0,1fr);gap:10px;padding:10px 0;border-bottom:1px solid var(--rule);font-size:.9rem;align-items:baseline}
-.toollist code{color:var(--accent);font-weight:500}
-.paid{font:500 .7rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.06em}
-.paid.y{color:var(--warn)} .paid.n{color:var(--muted)}
-.note{font-size:.86rem;color:var(--muted);margin-top:14px}
+/* console */
+.console{display:grid;grid-template-columns:13rem minmax(0,1fr);gap:32px;align-items:start}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 72px);display:grid;gap:2px}
+.rail a{display:flex;justify-content:space-between;text-decoration:none;padding:9px 10px;border-radius:var(--r);color:var(--muted);font-size:.92rem}
+.rail a[aria-current="page"]{background:var(--sheet);color:var(--ink);box-shadow:inset 3px 0 0 var(--copper)}
+.rail .who{padding:10px;margin-bottom:8px;border-bottom:1px solid var(--rule)}
+.rail .who b{display:block;font-weight:600;font-size:.9rem;overflow-wrap:anywhere}
+.rail .who span{font:400 .66rem/1.4 var(--f-mono);color:var(--muted);overflow-wrap:anywhere}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--rule);border-radius:var(--r);background:var(--sheet);margin-bottom:24px}
+.tiles > div{padding:16px 18px;min-width:0}
+.tiles > div+div{border-left:1px solid var(--rule)}
+.tiles b{display:block;font:700 1.5rem/1.15 var(--f-mono);letter-spacing:-.03em;margin-top:6px}
+.tiles .sub{margin-top:4px}
+.bar{height:8px;border-radius:999px;background:var(--code);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--copper)}
+.bar.ok i{background:var(--ok)}
+.section{margin-top:28px}
+.section > .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 
-/* receipts */
-.why{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:22px}
-.why div{border-top:2px solid var(--ink);padding-top:10px}
-.why b{font:700 1rem/1.3 var(--f-display);display:block;margin-bottom:4px}
-.why p{font-size:.88rem;color:var(--muted)}
-td.mono{font-size:.8rem;white-space:nowrap}
+/* key form */
+.panel{border:1px solid var(--ink);border-radius:var(--r);background:var(--sheet);margin-bottom:22px}
+.panel .ph{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.panel .pb{padding:18px;display:grid;gap:18px}
+.panel .pf{padding:14px 18px;border-top:1px solid var(--rule);display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.field{display:grid;gap:6px;min-width:0}
+.field > span{font-weight:600;font-size:.88rem}
+.field small{color:var(--muted);font-size:.8rem}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.seg{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--rule);border-radius:var(--r);overflow:hidden;width:fit-content;max-width:100%}
+.seg button{font:500 .82rem/1 var(--f-body);padding:9px 12px;border:0;border-right:1px solid var(--rule);background:transparent;color:var(--muted);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.money{display:flex;align-items:center;border:1px solid var(--rule);border-radius:var(--r);background:var(--sheet);overflow:hidden;max-width:12rem}
+.money span{padding:0 10px;font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.money input{border:0;background:transparent;padding:10px 10px 10px 0;font:500 .9rem var(--f-mono);color:var(--ink);width:100%;min-width:0}
+.limits{display:grid;gap:8px}
+.limit-row{display:grid;grid-template-columns:minmax(0,1fr) 9rem 7.5rem 2.2rem;gap:8px;align-items:center}
+.iconbtn{border:1px solid var(--rule);background:transparent;color:var(--muted);border-radius:var(--r);height:38px;cursor:pointer;font:500 1rem var(--f-mono)}
+.scopes{display:grid;gap:8px}
+.scopes label{display:grid;grid-template-columns:1.2rem minmax(0,1fr);gap:8px;align-items:start;font-size:.9rem}
+.scopes code{color:var(--copper)}
+.secret{display:grid;gap:12px;border:1px solid var(--copper);background:var(--copper-soft);border-radius:var(--r);padding:16px;margin-bottom:22px}
+.secret .val{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.secret code{font-size:.82rem;background:var(--sheet);padding:9px 11px;border-radius:var(--r);overflow-wrap:anywhere;flex:1 1 260px}
 
-/* list */
-.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;counter-reset:s}
-.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px;font-size:.9rem;color:var(--muted)}
-.steps li::before{content:counter(s);font:800 1.6rem/1 var(--f-display);color:var(--accent)}
-.steps b{color:var(--ink);font-weight:600}
-.botcard{margin-top:26px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px}
+/* wallet */
+.amounts{display:flex;gap:8px;flex-wrap:wrap}
+.amounts button{font:500 .9rem/1 var(--f-mono);padding:11px 14px;border-radius:var(--r);border:1px solid var(--rule);background:transparent;color:var(--ink);cursor:pointer}
+.amounts button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.methods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.method{display:grid;gap:4px;text-align:left;padding:14px;border-radius:var(--r);border:1px solid var(--rule);background:transparent;color:var(--ink);cursor:pointer;font:inherit}
+.method b{font-size:.92rem}
+.method span{font-size:.8rem;color:var(--muted)}
+.method[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.calc{border-top:1px dashed var(--ink);border-bottom:1px dashed var(--ink);padding-block:10px;display:grid;gap:6px;font-size:.9rem}
+.calc div{display:flex;justify-content:space-between;gap:12px}
+.calc .tot{font-weight:600;border-top:1px solid var(--rule);padding-top:8px}
+.addr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.addr code{font-size:.78rem;background:var(--code);padding:9px 11px;border-radius:var(--r);overflow-wrap:anywhere;flex:1 1 260px}
 
-footer{padding-block:28px 40px;font-size:.84rem;color:var(--muted)}
-footer .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+/* sign in */
+.signin{max-width:420px;margin:24px auto 0;border:1px solid var(--ink);background:var(--sheet);border-radius:var(--r);padding:28px;display:grid;gap:16px}
+.gbtn{justify-content:center;width:100%;padding:13px}
+.or{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;color:var(--muted);font-size:.8rem}
+.or::before,.or::after{content:"";height:1px;background:var(--rule)}
 
-@media (max-width:860px){
-  .hero,.split,.cols{grid-template-columns:minmax(0,1fr)}
-  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .tiles div+div{border-left:0}
-  .tiles div{border-top:1px solid var(--rule)}
-  .tiles div:nth-child(-n+2){border-top:0}
-  .tiles div:nth-child(even){border-left:1px solid var(--rule)}
-  .why,.steps{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 14px;border-radius:var(--r);font-size:.88rem;z-index:30}
+
+footer.foot{border-top:1px solid var(--rule);padding-block:22px 34px;font-size:.82rem;color:var(--muted)}
+footer.foot .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+@media (max-width:900px){
+  .hero,.detail .db,.grid2{grid-template-columns:minmax(0,1fr)}
+  .detail .db > div + div{border-left:0;border-top:1px solid var(--rule)}
+  .row3{grid-template-columns:minmax(0,1fr);gap:14px}
+  .facts,.statline{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .facts div:nth-child(3){padding-left:0;border-left:0}
+  .facts div:nth-child(n+3){border-top:1px solid var(--rule)}
+  .statline div:nth-child(3){border-left:0}
+  .statline div:nth-child(n+3){border-top:1px solid var(--rule)}
+  .console{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;grid-auto-flow:column;grid-auto-columns:max-content;overflow-x:auto;gap:4px}
+  .rail .who{display:none}
+  .tiles{grid-template-columns:minmax(0,1fr)}
+  .tiles > div+div{border-left:0;border-top:1px solid var(--rule)}
+  .methods{grid-template-columns:minmax(0,1fr)}
 }
-@media (max-width:520px){
-  .facts{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .why,.steps{grid-template-columns:minmax(0,1fr)}
-  .transcript li{grid-template-columns:4.6rem minmax(0,1fr)}
-  .transcript .t{grid-column:2}
-  .checks li{grid-template-columns:1.3rem minmax(0,1fr)}
-  .checks .id{grid-column:2}
-  .checks li>span:last-child{grid-column:2}
-  .toollist li{grid-template-columns:7.5rem minmax(0,1fr)}
-  .toollist li>span:last-child{grid-column:1/-1}
-  nav.links{order:3;width:100%}
+@media (max-width:560px){
+  .toolgrid{grid-template-columns:minmax(0,1fr)}
+  .toolgrid div:nth-child(odd){border-right:0}
+  .toolgrid div:nth-last-child(2){border-bottom:1px solid var(--rule)}
+  .limit-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .limit-row select:first-child{grid-column:1/-1}
+  .ticket li{grid-template-columns:4.4rem minmax(0,1fr)}
+  .ticket li span:last-child{grid-column:2}
+  .checks li{grid-template-columns:1.2rem minmax(0,1fr)}
+  .checks li > span:last-child{grid-column:2}
+  .navlinks{order:3;width:100%}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style>
 
 <header class="top">
   <div class="wrap">
-    <a class="logo" href="#top" data-jump="top"><span class="mark">N</span>Nen</a>
-    <nav class="links" aria-label="Sections">
-      <a href="#catalog" data-jump="catalog">Catalog</a>
-      <a href="#agents" data-jump="agents">For agents</a>
-      <a href="#receipts" data-jump="receipts">Receipts</a>
-      <a href="#list-api" data-jump="list-api">List your API</a>
+    <a class="brand" href="#home" data-go="home">nen<i>PAY PER CALL</i></a>
+    <nav class="navlinks" aria-label="Main">
+      <a href="#apis" data-go="apis">APIs &amp; calls</a>
+      <a href="#agents" data-go="agents">Connect an agent</a>
+      <a href="#sell" data-go="sell">Sell an API</a>
       <a href="https://github.com/PiNocPie/nen">GitHub</a>
     </nav>
-    <span class="net">NEAR testnet · Base Sepolia</span>
+    <div class="right">
+      <span class="net">TESTNET</span>
+      <button class="btn small" id="authbtn" data-go="signin">Sign in</button>
+    </div>
   </div>
 </header>
 
-<main id="top">
+<main class="wrap" id="app"></main>
+
+<footer class="foot">
   <div class="wrap">
-    <div class="hero">
-      <div>
-        <p class="eyebrow">Open API market for AI agents</p>
-        <h1 style="margin-top:14px">Your agent pays per call. <em>Its NEAR account signs.</em></h1>
-        <p class="lede">Agents find an API, read the exact price, pay for one call over x402 and get a receipt. The paying address belongs to the agent's NEAR account through Chain Signatures, so no private key goes in the config. Anyone can list an API; the Nen team reviews it before it routes.</p>
-        <div class="cta">
-          <button class="btn primary" data-jump="agents">Connect your agent</button>
-          <button class="btn" data-jump="list-api">List your API</button>
-        </div>
-        <div class="facts">
-          <div><b class="num">22</b><span>paid calls on testnet</span></div>
-          <div><b class="num">$0.022</b><span>total spent, USDC</span></div>
-          <div><b class="num">$0</b><span>charged for 7 failed calls</span></div>
-        </div>
-      </div>
-
-      <figure class="receipt" style="margin:0" aria-label="Transcript of a real agent session">
-        <div class="rh"><span>agent session · MCP over stdio</span><span>2026-11-03 18:14 UTC</span></div>
-        <ol class="transcript">
-          <li><span class="tool">discover</span><span class="out">"near account balance" → nen/near-account, $0.001</span><span class="t">free</span></li>
-          <li><span class="tool">inspect</span><span class="out">$0.001 / call · empty result: free · error: free · reviewed, manifest unchanged</span><span class="t">free</span></li>
-          <li><span class="tool">quote</span><span class="out">best: nen/near-account</span><span class="t">free</span></li>
-          <li><span class="tool">run</span><span class="out">{"account": "oops"} → invalid_input, fix_input. Nothing paid.</span><span class="t">$0</span></li>
-          <li><span class="tool">run</span><span class="out">nansen/smart-money-holdings → listing_not_routable (pending review)</span><span class="t">$0</span></li>
-          <li><span class="tool">run</span><span class="out">paid_ok · batch-settlement · exists: true</span><span class="t num">300 ms</span></li>
-          <li><span class="tool">run</span><span class="out">same idempotency key → same receipt, replayed</span><span class="t">$0</span></li>
-          <li><span class="tool">wallet</span><span class="out">0xcB9f…21cA, controlled by NEAR Chain Signatures (nen-testnet.testnet) · 19.97 USDC</span><span class="t">free</span></li>
-        </ol>
-        <div class="rf">Recorded from <span>packages/mcp-server/scripts/smoke.mjs</span> against the live testnet. Spent today: $0.022 of a $0.10 cap.</div>
-      </figure>
-    </div>
-  </div>
-
-  <section id="catalog">
-    <div class="wrap">
-      <div class="sec-head">
-        <p class="eyebrow">Catalog</p>
-        <h2>Every price, policy and review in plain view</h2>
-        <p>Listings come from <span class="mono">registry/</span> on GitHub. A listing routes only when a reviewer approved it and its manifest hash still matches the approved one. Select a row to see the full listing.</p>
-      </div>
-      <div class="tools-row">
-        <input class="search" id="q" type="search" placeholder="Search, e.g. smart money holdings" aria-label="Search listings">
-        <button class="chip" data-cat="all" aria-pressed="true">All</button>
-        <button class="chip" data-cat="near-native" aria-pressed="false">NEAR-native</button>
-        <button class="chip" data-cat="onchain-data" aria-pressed="false">Onchain data</button>
-        <button class="chip" id="live" aria-pressed="false">Routable only</button>
-      </div>
-      <div class="table-box">
-        <table>
-          <thead><tr><th>Name / provider</th><th class="r">Price</th><th>Charge policy</th><th>Health</th><th>Status</th></tr></thead>
-          <tbody id="rows"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <section id="agents">
-    <div class="wrap">
-      <div class="sec-head">
-        <p class="eyebrow">For agents</p>
-        <h2>One MCP server, seven tools, no EVM key</h2>
-        <p>Add Nen to Claude Code or any MCP client. The only secret is a NEAR access key, kept in your environment. It asks the NEAR MPC network to sign, and never touches a Base private key.</p>
-      </div>
-      <div class="split">
-        <div class="codecard">
-          <div class="bar"><span class="eyebrow">.mcp.json</span><button class="copy" data-copy="mcp">Copy</button></div>
-<pre id="mcp">{
-  "mcpServers": {
-    "nen": {
-      "command": "node",
-      "args": ["/path/to/nen/packages/mcp-server/dist/index.js"],
-      "env": {
-        "NEAR_NETWORK": "testnet",
-        "NEAR_ACCOUNT_ID": "&lt;name&gt;.testnet",
-        "NEAR_PRIVATE_KEY": "${NEAR_PRIVATE_KEY}",
-        "NEN_DAILY_CAP_USD": "1"
-      }
-    }
-  }
-}</pre>
-        </div>
-        <div>
-          <ul class="toollist">
-            <li><code>discover</code><span class="paid n">free</span><span>Find reviewed APIs by query, with price and networks.</span></li>
-            <li><code>inspect</code><span class="paid n">free</span><span>Schemas, example input, price line, review status and manifest hash.</span></li>
-            <li><code>quote</code><span class="paid n">free</span><span>Best listing plus fallbacks: 45% success, 25% price, 20% latency, 10% billing.</span></li>
-            <li><code>run</code><span class="paid y">pays</span><span>Validates input, pays at most the listed price, returns data and a receipt.</span></li>
-            <li><code>receipts</code><span class="paid n">free</span><span>Recent receipts and today's spend against the cap.</span></li>
-            <li><code>wallet</code><span class="paid n">free</span><span>NEAR account, derived Base address, session key, USDC balance.</span></li>
-            <li><code>submit_listing</code><span class="paid n">free</span><span>Seller dry run: schema check and an unpaid probe of the 402.</span></li>
-          </ul>
-          <p class="note">Errors come back as JSON with a <span class="mono">code</span> and a <span class="mono">next_action</span> (retry, use_fallback, fix_input, top_up, stop…), so the agent knows what to do next.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="receipts">
-    <div class="wrap">
-      <div class="sec-head">
-        <p class="eyebrow">Receipts</p>
-        <h2>One NEAR signature opens a channel, then calls take 200 ms</h2>
-        <p>A Chain Signatures request takes seconds, which is too slow for every call. So the NEAR account signs one capped deposit into an x402 batch-settlement channel, and a local session key signs a voucher for each call after that.</p>
-      </div>
-      <div class="why">
-        <div><b>Deposit, signed on NEAR</b><p>About 7 s through the MPC contract <span class="mono">v1.signer-prod.testnet</span>. Capped at $0.50 by default.</p></div>
-        <div><b>Each call, a voucher</b><p>Signed locally in 2–19 ms. The whole paid call takes about 200–300 ms.</p></div>
-        <div><b>Unused deposit comes back</b><p>The channel can be refunded. A failed call is never charged.</p></div>
-      </div>
-      <div class="table-box">
-        <table>
-          <thead><tr><th>Time (UTC)</th><th>Receipt</th><th>Status</th><th class="r">Charged</th><th class="r">Sign</th><th class="r">Latency</th><th>Settlement</th></tr></thead>
-          <tbody id="rcpts"></tbody>
-        </table>
-      </div>
-      <p class="note">Most recent 12 receipts from payer <a href="https://sepolia.basescan.org/address/0xcB9fFe1087b5442ceEf609361CE633B1795C21cA">0xcB9f…21cA</a> on Base Sepolia. Rows that show a transaction are channel deposits signed by NEAR Chain Signatures.</p>
-    </div>
-  </section>
-
-  <section id="list-api">
-    <div class="wrap">
-      <div class="sec-head">
-        <p class="eyebrow">List your API</p>
-        <h2>Open to anyone, routed after review</h2>
-        <p>Listing is free and Nen takes no fee. Agents pay your address directly.</p>
-      </div>
-      <ol class="steps">
-        <li><b>Serve x402 V2</b>Put any @x402 middleware in front of your endpoint.</li>
-        <li><b>Write nen.json</b>Price, schemas, networks and data license, per the listing schema.</li>
-        <li><b>Run the bot</b>submit_listing probes your 402 and lists anything to fix.</li>
-        <li><b>Get reviewed</b>A reviewer pins your manifest's sha256. Edits pause routing until re-review.</li>
-      </ol>
-      <div class="botcard">
-        <div class="status-line"><h3>Bot report · nen/near-account</h3><span class="pill bad"><span class="dot"></span>7 of 8 passed</span></div>
-        <ul class="checks" id="botchecks"></ul>
-      </div>
-    </div>
-  </section>
-</main>
-
-<footer>
-  <div class="wrap">
-    <span>Nen is open source under MIT. Testnet only: no mainnet funds move yet.</span>
-    <span><a href="https://github.com/PiNocPie/nen">GitHub</a> · <a href="https://github.com/PiNocPie/nen/blob/main/llms.txt">llms.txt</a> · <a href="https://github.com/PiNocPie/nen/tree/main/registry/schema">Listing schema</a></span>
+    <span>Nen is open source (MIT). Testnet only: no mainnet money moves yet.</span>
+    <span><a href="https://github.com/PiNocPie/nen/blob/main/llms.txt">llms.txt</a> · <a href="https://github.com/PiNocPie/nen/tree/main/registry">Registry</a> · <a href="https://github.com/PiNocPie/nen/blob/main/registry/schema/listing.schema.json">Listing schema</a></span>
   </div>
 </footer>
 
 <script>
-const SHA_NEN = "7b787028863654a22db6cfefeb233346d7ebdb38074ac8edd94d4491fd7deff0";
-const SHA_NANSEN = "5b7abbbbf3709194d350535ff6e34bbc6dfcc767a68e8512fc552d1df1e3c3d2";
-const BOT = [
-  ["reachable", true, "HTTP 402 from POST /near/account"],
-  ["returns_402", true, "unpaid request gets 402 Payment Required"],
-  ["x402_v2", true, "x402Version 2, 2 payment options"],
-  ["networks_match", true, "every manifest network is offered"],
-  ["schemes_match", true, "offers batch-settlement, exact"],
-  ["price_matches", true, "402 price equals manifest price $0.001"],
-  ["pay_to", true, "payTo 0x11f4…4aa3"],
-  ["public_https", false, "localhost endpoint", "Public listings must use a public https URL."]
+/* ---------- data: real where it exists, labelled where it doesn't ---------- */
+const NEN_FEE = 0.03; // draft top-up fee, not final
+const APIS = [
+  { id:"nen/near-account", name:"NEAR account state", provider:"Nen", cat:"NEAR-native", state:"live",
+    price:"0.001", empty:"free", network:"Base Sepolia", schemes:"batch-settlement, exact",
+    desc:"Balance, locked balance, storage bytes and contract flag for one NEAR account id.",
+    input:'{ "account_id": "nen-testnet.testnet" }',
+    output:'{ "account_id": "nen-testnet.testnet",\n  "exists": true, "balance_yocto": "…",\n  "storage_bytes": 182, "has_contract": false }',
+    sources:"NEAR testnet RPC (FastNEAR, falling back to rpc.testnet.near.org)", license:"Public chain data",
+    review:{ status:"Reviewed", by:"nen-team", at:"2026-11-03", sha:"7b787028…7deff0", match:true },
+    health:"22 paid / 29 calls · ~250 ms warm",
+    bot:[["reachable",1,"HTTP 402 from POST /near/account"],["returns_402",1,"unpaid request gets 402"],["x402_v2",1,"x402Version 2, 2 payment options"],["networks_match",1,"every manifest network offered"],["schemes_match",1,"batch-settlement, exact"],["price_matches",1,"402 price = $0.001"],["pay_to",1,"0x11f4…4aa3"],["public_https",0,"localhost endpoint: deploy to https"]] },
+  { id:"nansen/smart-money-holdings", name:"Smart Money holdings", provider:"Nansen", cat:"Onchain data", state:"review",
+    price:"0.05", empty:"free", network:"Base", schemes:"exact",
+    desc:"Current token holdings of wallets Nansen labels as Smart Money, by chain. 5 req/s per paying wallet.",
+    input:'{ "chains": ["ethereum"] }', output:"Holdings per token, as returned by Nansen's x402 API.",
+    sources:"Nansen's labelled onchain dataset", license:"Paid directly to Nansen; Nansen's terms apply",
+    review:{ status:"Pending review", by:null, at:null, sha:"5b7abbbb…e3c3d2", match:false },
+    health:"No calls yet", bot:null },
+  { id:"elfa/trending-tokens", name:"Trending tokens on social", provider:"Elfa", cat:"Social", state:"planned",
+    price:null, desc:"Tokens gaining mentions across crypto social accounts. Needs an Elfa partnership or your own Elfa key (BYOK).",
+    input:"Not defined yet", output:"Not defined yet", sources:"Elfa", license:"Pending agreement with Elfa",
+    review:null, health:"Not listed", bot:null },
+  { id:"nen/near-ft-balances", name:"NEAR token balances", provider:"Nen", cat:"NEAR-native", state:"planned",
+    price:null, desc:"Every fungible token an account holds, with decimals applied.",
+    input:'{ "account_id": "…" }', output:"Not defined yet", sources:"NEAR RPC + token metadata", license:"Public chain data",
+    review:null, health:"Not listed", bot:null },
+  { id:"nen/intents-quote", name:"NEAR Intents swap quote", provider:"Nen", cat:"NEAR-native", state:"planned",
+    price:null, desc:"Best cross-chain swap quote from NEAR Intents solvers for a token pair and amount.",
+    input:'{ "from": "…", "to": "…", "amount": "…" }', output:"Not defined yet", sources:"NEAR Intents solver relay", license:"Public quotes",
+    review:null, health:"Not listed", bot:null }
 ];
-const LISTINGS = [
-  {
-    id: "nen/near-account", name: "NEAR testnet account state", provider: "Nen demo seller", cat: "near-native",
-    desc: "Balance, locked balance, storage bytes and contract flag for one NEAR testnet account id.",
-    price: "0.001", network: "eip155:84532 (Base Sepolia)", schemes: "batch-settlement, exact", emptyFree: true,
-    routable: true, status: ["ok", "Reviewed"], reviewer: "nen-team", reviewedAt: "2026-11-03", sha: SHA_NEN, approved: SHA_NEN,
-    health: { rate: "76%", n: 29, p50: "200–300 ms after deposit" },
-    tags: "near account balance testnet",
-    input: '{ "account_id": "nen-testnet.testnet" }',
-    output: '{ "account_id", "exists", "balance_yocto",\n  "storage_bytes", "has_contract" }',
-    sources: "NEAR testnet RPC (FastNEAR, falling back to rpc.testnet.near.org).",
-    license: "Public NEAR chain data, served by Nen's own demo seller.",
-    payout: "direct", bot: BOT,
-    note: "Health includes 7 early failures while NEAR RPC was down; none were charged."
-  },
-  {
-    id: "nansen/smart-money-holdings", name: "Smart Money holdings", provider: "Nansen", cat: "onchain-data",
-    desc: "Current token holdings of wallets Nansen labels as Smart Money, filtered by chain. Rate limit 5 req/s per paying wallet.",
-    price: "0.05", network: "eip155:8453 (Base)", schemes: "exact", emptyFree: true,
-    routable: false, status: ["warn", "Pending review"], reviewer: null, reviewedAt: null, sha: SHA_NANSEN, approved: null,
-    health: null, tags: "smart money holdings wallets tokens nansen",
-    input: '{ "chains": ["ethereum"] }',
-    output: "Holdings per token, per Nansen's x402 API.",
-    sources: "Nansen's own labelled onchain dataset, sold over its public x402 API.",
-    license: "Nen only indexes the endpoint; the agent pays Nansen directly and Nansen's terms apply.",
-    payout: "direct", bot: null,
-    note: "Not routable: pending review by the Nen team. No paid call made yet."
-  }
+const TOOLS = [
+  ["discover","free","Search APIs by what you need. Returns price and networks per hit."],
+  ["inspect","free","Schemas, example input, price line, review status and manifest hash."],
+  ["quote","free","Best listing plus fallbacks, ranked on success, price, latency, billing."],
+  ["run","paid","Checks input, pays at most the listed price, returns data and a receipt."],
+  ["receipts","free","Recent receipts and today's spend against the key's limits."],
+  ["wallet","free","Balance, held amount, and the limits on the key in use."],
+  ["submit_listing","free","For sellers: schema check and an unpaid probe of your 402."]
 ];
 const RECEIPTS = [
-  ["05:15:45","rcpt_1953883b","paid_ok","0.001",6874,9055,"0x5b82eb434285b8077f76c4e0d1103fbf09d3281d2e909a3a7bd3cb901d5ad659"],
-  ["05:15:54","rcpt_1ca6ad58","paid_ok","0.001",3,186,null],
-  ["05:15:54","rcpt_0a672ec3","paid_ok","0.001",4,201,null],
-  ["05:15:54","rcpt_bb59a1d3","paid_ok","0.001",3,192,null],
-  ["05:15:55","rcpt_1dd83e0f","paid_ok","0.001",2,189,null],
-  ["05:32:29","rcpt_c3f02259","paid_ok","0.001",13,752,null],
-  ["05:32:30","rcpt_5e0d0745","paid_ok","0.001",3,202,null],
-  ["05:32:30","rcpt_4f28949f","paid_ok","0.001",3,213,null],
-  ["05:32:30","rcpt_66e1fa70","paid_ok","0.001",2,200,null],
-  ["18:14:37","rcpt_6eb77daa","paid_ok","0.001",19,1240,null],
-  ["18:14:38","rcpt_b5e2866a","paid_ok","0.001",6045,7861,"0x967354670d57bf5ab07b1280749c6cd938589c7d73bec9e3f0884e777a5cbac6"],
-  ["18:14:46","rcpt_a1ae6129","paid_ok","0.001",4,208,null]
-].reverse();
+  ["18:14:46","rcpt_a1ae6129","nen/near-account","0.001",208,null],
+  ["18:14:38","rcpt_b5e2866a","nen/near-account","0.001",7861,"0x967354670d57bf5ab07b1280749c6cd938589c7d73bec9e3f0884e777a5cbac6"],
+  ["18:14:37","rcpt_6eb77daa","nen/near-account","0.001",1240,null],
+  ["05:32:30","rcpt_66e1fa70","nen/near-account","0.001",200,null],
+  ["05:32:30","rcpt_4f28949f","nen/near-account","0.001",213,null],
+  ["05:32:30","rcpt_5e0d0745","nen/near-account","0.001",202,null],
+  ["05:32:29","rcpt_c3f02259","nen/near-account","0.001",752,null],
+  ["05:15:45","rcpt_1953883b","nen/near-account","0.001",9055,"0x5b82eb434285b8077f76c4e0d1103fbf09d3281d2e909a3a7bd3cb901d5ad659"]
+];
+const state = {
+  signedIn:false, email:"you@gmail.com",
+  balance:4.85, held:0.05,
+  keys:[
+    { name:"research-agent", prefix:"nen_sk_test_7Qd2", created:"2026-11-01", expires:"2026-12-01", daily:"1.00", spent:"0.022",
+      perApi:[["nen/near-account","calls","200"],["nansen/smart-money-holdings","usd","0.50"]], scopes:["run","receipts"], status:"active" },
+    { name:"ci-smoke-test", prefix:"nen_sk_test_k91x", created:"2026-10-20", expires:"2026-10-27", daily:"0.10", spent:"0",
+      perApi:[], scopes:["run"], status:"expired" }
+  ],
+  activity:[["2026-11-01","Top-up · card","5.00","4.85"],["2026-11-01","Sign-up credit","0.00","0.00"]],
+  apiFilter:"all", apiQuery:"", openApi:"nen/near-account",
+  draft:null, newSecret:null,
+  topup:{ amount:10, method:"card" }
+};
 
-const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const short = h => h.slice(0, 10) + "…" + h.slice(-4);
-
-function checksHtml(list) {
-  return list.map(([id, ok, detail, fix]) =>
-    `<li><span class="ic ${ok ? "y" : "n"}">${ok ? "✓" : "✕"}</span><span class="id">${id}</span><span>${esc(detail)}${fix ? `<span class="fix">${esc(fix)}</span>` : ""}</span></li>`
-  ).join("");
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const short = h => h.slice(0,10) + "…" + h.slice(-4);
+function meter(usd){ // print to USDC's 6 decimals, padding zeros faint
+  if (usd == null) return '<span class="muted">—</span>';
+  const s = Number(usd).toFixed(6); const m = s.match(/^(.*?)(0*)$/);
+  let sig = m[1], pad = m[2]; if (sig.endsWith(".")) { sig += pad.slice(0,2); pad = pad.slice(2); }
+  return `<span class="meter">$${sig}<span class="z">${pad}</span></span>`;
 }
+const usd2 = n => "$" + Number(n).toFixed(2);
+const pillFor = st => ({ live:'<span class="pill ok">Live · testnet</span>', review:'<span class="pill info">In review</span>', planned:'<span class="pill plain">Planned</span>' }[st]);
+function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.setAttribute("role","status"); t.textContent=msg; document.body.append(t); setTimeout(()=>t.remove(),2200); }
+function copy(text, btn){
+  const done = () => { if (btn) { const o=btn.textContent; btn.textContent="Copied"; setTimeout(()=>btn.textContent=o,1400); } };
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => toast("Select the text and copy it with Ctrl+C"));
+  else toast("Select the text and copy it with Ctrl+C");
+}
+function randKey(){ const a="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"; let s=""; const b=new Uint32Array(32); crypto.getRandomValues(b); b.forEach(x=>s+=a[x%a.length]); return "nen_sk_test_"+s; }
+const today = new Date("2026-11-03T12:00:00Z");
+const addDays = d => { const x=new Date(today); x.setUTCDate(x.getUTCDate()+d); return x.toISOString().slice(0,10); };
 
-function detailHtml(l) {
-  const unchanged = l.approved && l.approved === l.sha;
-  const statusPill = l.routable
-    ? `<span class="pill ok"><span class="dot"></span>Routable</span>`
-    : `<span class="pill warn"><span class="dot"></span>Not routable</span>`;
-  const review = l.reviewer
-    ? `Reviewed by ${esc(l.reviewer)} · ${l.reviewedAt} · manifest <span class="mono">${short(l.sha)}</span> ${unchanged ? "= approved hash ✓" : "≠ approved hash"}`
-    : `No review yet · manifest <span class="mono">${short(l.sha)}</span>`;
-  const run = `run({ listing_id: "${l.id}", input: ${l.input} })`;
-  return `<div class="detail-in">
-    <div class="status-line">${statusPill}<span>${review}</span></div>
-    <div class="tiles">
-      <div><b>$${l.price} / call</b><span>USDC · ${l.network.split(" ")[1].replace(/[()]/g, "")}</span></div>
-      <div><b>${l.emptyFree ? "Free" : "Charged"}</b><span>empty result (declared)</span></div>
-      <div><b>Free</b><span>on error (Nen rule)</span></div>
-      <div><b>${l.health ? l.health.rate : "—"}</b><span>${l.health ? `success · ${l.health.n} calls` : "no calls yet"}</span></div>
-      <div><b>${l.health ? "~250 ms" : "—"}</b><span>${l.health ? "paid call, warm channel" : "latency"}</span></div>
-    </div>
-    <div class="block"><span class="eyebrow">Use from your agent</span><pre>${esc(run)}</pre></div>
-    <div class="cols">
-      <div class="block"><span class="eyebrow">What to send</span><pre>${esc(l.input)}</pre>
-        <span class="eyebrow" style="margin-top:6px">What you get back</span><pre>${esc(l.output)}</pre></div>
-      <div class="block"><span class="eyebrow">Payment & data</span>
-        <dl class="kv">
-          <dt>Protocol</dt><dd>x402 V2 · ${esc(l.schemes)}</dd>
-          <dt>Network</dt><dd>${esc(l.network)}</dd>
-          <dt>Payout</dt><dd>${esc(l.payout)} to the seller's address</dd>
-          <dt>Sources</dt><dd>${esc(l.sources)}</dd>
-          <dt>License</dt><dd>${esc(l.license)}</dd>
-        </dl>
-        <p class="sub" style="margin-top:6px">${esc(l.note)}</p>
+/* ---------- views ---------- */
+const CONSOLE = ["overview","keys","wallet","usage"];
+const VIEWS = {
+home(){ return `
+  <section class="hero">
+    <div>
+      <p class="label">An open API market for AI agents</p>
+      <h1 style="margin-top:14px">Your agent buys one API call at a time.</h1>
+      <p class="lede">Sign in with Google, top up with a card or crypto, and give your agent a key with an expiry date and daily limits. It finds an API, sees the exact price, pays for one call and gets a receipt.</p>
+      <div class="cta">
+        <button class="btn solid" data-go="signin">Get an API key</button>
+        <button class="btn" data-go="apis">See every API</button>
       </div>
     </div>
-    ${l.bot ? `<div class="block"><span class="eyebrow">Bot check</span><ul class="checks">${checksHtml(l.bot)}</ul></div>` : ""}
-  </div>`;
-}
+    <figure class="ticket" style="margin:0" aria-label="A real agent session on testnet">
+      <header><span>AGENT SESSION · TESTNET</span><span>2026-11-03 18:14 UTC</span></header>
+      <ol>
+        <li><b>discover</b><span>"near account balance" → nen/near-account</span><span>free</span></li>
+        <li><b>inspect</b><span>$0.001 / call · empty result free · error free</span><span>free</span></li>
+        <li><b>run</b><span>{"account":"oops"} → invalid_input. Not charged.</span><span>$0</span></li>
+        <li><b>run</b><span>paid_ok · exists: true</span><span class="num">300 ms</span></li>
+        <li><b>run</b><span>same idempotency key → same receipt</span><span>$0</span></li>
+      </ol>
+      <footer><span>charged ${meter("0.001")}</span><span>failed calls ${meter("0")}</span></footer>
+    </figure>
+  </section>
+  <div class="facts">
+    <div><b class="num">22</b><span>paid calls on testnet</span></div>
+    <div><b class="num">$0.022</b><span>spent in total</span></div>
+    <div><b class="num">$0</b><span>charged for 7 failed calls</span></div>
+    <div><b class="num">~250 ms</b><span>per paid call, warm channel</span></div>
+  </div>
+  <div class="rows">
+    <div class="row3">
+      <h2>For the person</h2>
+      <p>One account, one balance. Card top-ups go through Privy's on-ramp (Stripe or MoonPay); crypto top-ups are USDC on Base or anything NEAR Intents can bridge. The fee is shown before you pay.</p>
+      <ol class="steps"><li>Sign in with Google</li><li>Top up $5 or more</li><li>Create a key with limits</li><li>Paste it into your agent</li></ol>
+    </div>
+    <div class="row3">
+      <h2>For the agent</h2>
+      <p>Seven MCP tools. Prices are exact and printed before the call. A key can't spend past its expiry date, its daily limit, or the limit you set on each API.</p>
+      <ol class="steps"><li>discover → inspect</li><li>quote picks a provider</li><li>run pays and returns data</li><li>receipt for every call</li></ol>
+    </div>
+    <div class="row3">
+      <h2>For the seller</h2>
+      <p>List any x402 API by pull request. A bot probes your 402, a Nen reviewer approves the manifest hash, and edits pause routing until the next review.</p>
+      <ol class="steps"><li>Serve x402 V2</li><li>Write nen.json</li><li>Run submit_listing</li><li>Get reviewed</li></ol>
+    </div>
+  </div>`; },
 
-const state = { q: "", cat: "all", live: false, open: null };
-function renderRows() {
-  const q = state.q.trim().toLowerCase();
-  const list = LISTINGS.filter(l =>
-    (state.cat === "all" || l.cat === state.cat) &&
-    (!state.live || l.routable) &&
-    (!q || q.split(/\s+/).some(w => (l.name + " " + l.provider + " " + l.tags + " " + l.desc).toLowerCase().includes(w)))
-  );
-  const tb = document.getElementById("rows");
-  if (!list.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">No listing matches. Clear the search or choose All.</td></tr>`; return; }
-  tb.innerHTML = list.map(l => {
-    const open = state.open === l.id;
-    return `<tr class="row${l.routable ? "" : " dim"}" tabindex="0" data-id="${l.id}" aria-expanded="${open}">
-      <td><span class="caret">▸</span> <span class="name">${esc(l.name)}</span><div class="sub">${esc(l.provider)} · ${l.cat} · <span class="mono">${l.id}</span></div></td>
-      <td class="price num">$${l.price}<span class="sub">/call</span></td>
-      <td><span class="pill ${l.emptyFree ? "ok" : "warn"}">empty ${l.emptyFree ? "free" : "charged"}</span> <span class="pill plain">errors free</span></td>
-      <td class="num">${l.health ? `${l.health.rate} · ${l.health.n} calls` : `<span class="sub">—</span>`}</td>
-      <td><span class="pill ${l.status[0]}"><span class="dot"></span>${l.status[1]}</span>${l.routable ? "" : `<div class="sub" style="margin-top:4px">not routable</div>`}</td>
-    </tr>${open ? `<tr class="detail"><td colspan="5">${detailHtml(l)}</td></tr>` : ""}`;
-  }).join("");
+apis(){
+  const q = state.apiQuery.trim().toLowerCase();
+  const list = APIS.filter(a => (state.apiFilter==="all" || a.state===state.apiFilter) &&
+    (!q || (a.name+" "+a.provider+" "+a.cat+" "+a.desc+" "+a.id).toLowerCase().includes(q)));
+  const counts = { live:APIS.filter(a=>a.state==="live").length, review:APIS.filter(a=>a.state==="review").length, planned:APIS.filter(a=>a.state==="planned").length };
+  const open = APIS.find(a => a.id === state.openApi);
+  return `
+  <div class="page-head">
+    <div><p class="label">APIs &amp; calls</p><h1 style="font-size:clamp(1.6rem,3.4vw,2.3rem);margin-top:10px">Everything your agent can call</h1>
+    <p>${counts.live} live on testnet, ${counts.review} in review, ${counts.planned} planned. Only live, reviewed APIs take payment. Planned ones are on the roadmap and have no price yet.</p></div>
+  </div>
+  <div class="filters">
+    <input class="search" id="apiq" type="search" placeholder="Search APIs" aria-label="Search APIs" value="${esc(state.apiQuery)}">
+    ${[["all","All"],["live","Live"],["review","In review"],["planned","Planned"]].map(([k,l])=>`<button class="chip" data-filter="${k}" aria-pressed="${state.apiFilter===k}">${l}</button>`).join("")}
+  </div>
+  <div class="tbox"><table style="min-width:760px">
+    <thead><tr><th>API</th><th>Category</th><th class="r">Price per call</th><th>If empty</th><th>Status</th></tr></thead>
+    <tbody>${list.length ? list.map(a=>`
+      <tr class="click" tabindex="0" data-api="${a.id}" aria-selected="${state.openApi===a.id}">
+        <td><span class="api-name">${esc(a.name)}</span><div class="tid">${a.id}</div></td>
+        <td class="sub">${esc(a.cat)}</td>
+        <td class="r">${meter(a.price)}</td>
+        <td class="sub">${a.empty ? (a.empty==="free" ? "not charged" : "charged") : "—"}</td>
+        <td>${pillFor(a.state)}</td>
+      </tr>`).join("") : `<tr><td colspan="5" class="sub" style="text-align:center;padding:24px">No API matches. Clear the search or choose All.</td></tr>`}
+    </tbody></table></div>
+  ${open ? apiDetail(open) : ""}
+  <div class="section" style="margin-top:40px">
+    <div class="hd"><div><p class="label">Agent tools</p><h2 style="margin-top:8px">The calls your agent makes to Nen</h2></div></div>
+    <div class="toolgrid">${TOOLS.map(([n,p,d])=>`<div><code>${n}</code> <span class="pill ${p==="paid"?"bad":"plain"}" style="margin-left:6px">${p}</span><p>${d}</p></div>`).join("")}</div>
+  </div>`; },
+
+agents(){ const key = state.keys.find(k=>k.status==="active");
+  return `
+  <div class="page-head"><div><p class="label">Connect an agent</p><h1 style="font-size:clamp(1.6rem,3.4vw,2.3rem);margin-top:10px">Paste one config, then ask for data</h1>
+  <p>The agent authenticates with a Nen API key. It never sees your card, your Google account or a wallet key. Create the key in the console, where you set its expiry and limits.</p></div></div>
+  <div class="grid2">
+    <div class="stack">
+      <p class="label">Claude Code</p>
+      <pre id="cfg1">claude mcp add --transport http nen https://mcp.nen.dev/v1 \\
+  --header "Authorization: Bearer $NEN_API_KEY"</pre>
+      <p class="label" style="margin-top:8px">Any MCP client (.mcp.json)</p>
+      <pre id="cfg2">{
+  "mcpServers": {
+    "nen": {
+      "type": "http",
+      "url": "https://mcp.nen.dev/v1",
+      "headers": { "Authorization": "Bearer \${NEN_API_KEY}" }
+    }
+  }
+}</pre>
+      <div><button class="btn small ghost" data-copy="cfg2">Copy config</button></div>
+      <p class="sub">The hosted URL is a placeholder until the gateway is deployed. Today the server runs locally: see the README.</p>
+    </div>
+    <div class="stack">
+      <p class="label">Try this prompt</p>
+      <pre id="prompt">Use Nen to check the NEAR testnet account
+nen-testnet.testnet. Inspect the price first,
+and don't spend more than $0.01.</pre>
+      <div><button class="btn small ghost" data-copy="prompt">Copy prompt</button></div>
+      <p class="label" style="margin-top:8px">What the key allows</p>
+      <dl class="kv">${key ? `
+        <dt>Key</dt><dd class="mono">${key.prefix}…</dd>
+        <dt>Expires</dt><dd>${key.expires}</dd>
+        <dt>All APIs</dt><dd>${usd2(key.daily)} per day</dd>
+        ${key.perApi.map(([id,t,v])=>`<dt>${id.split("/")[1]}</dt><dd>${t==="calls"?`${v} calls`:usd2(v)} per day</dd>`).join("")}` :
+        `<dt>Key</dt><dd>None yet</dd>`}
+      </dl>
+      <div><button class="btn solid small" data-go="${state.signedIn?"keys":"signin"}">${state.signedIn?"Manage keys":"Sign in to create a key"}</button></div>
+    </div>
+  </div>`; },
+
+sell(){ const a = APIS[0]; return `
+  <div class="page-head"><div><p class="label">Sell an API</p><h1 style="font-size:clamp(1.6rem,3.4vw,2.3rem);margin-top:10px">Open to anyone, routed after review</h1>
+  <p>Listing is free. Agents pay your address directly for each call, at the price in your manifest and never more.</p></div></div>
+  <div class="grid2">
+    <ol class="steps" style="gap:16px;font-size:.95rem">
+      <li><span><b>Serve x402 V2.</b> <span class="muted">Put any @x402 server middleware in front of your endpoint.</span></span></li>
+      <li><span><b>Write nen.json.</b> <span class="muted">Price, input and output schemas, networks, data sources and license.</span></span></li>
+      <li><span><b>Run submit_listing.</b> <span class="muted">The bot probes your unpaid 402 and lists anything to fix. Nothing is published.</span></span></li>
+      <li><span><b>Open a pull request.</b> <span class="muted">A reviewer pins your manifest's sha256. Editing it pauses routing until re-review.</span></span></li>
+    </ol>
+    <div class="stack">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><p class="label">Example bot report · ${a.id}</p><span class="pill bad">7 of 8 passed</span></div>
+      <ul class="checks">${a.bot.map(([id,ok,d])=>`<li><span class="${ok?"y":"n"}">${ok?"✓":"✕"}</span><span class="id">${id}</span><span>${esc(d)}</span></li>`).join("")}</ul>
+    </div>
+  </div>`; },
+
+signin(){ return `
+  <div class="signin">
+    <div><p class="label">Nen console</p><h2 style="margin-top:10px">Sign in</h2><p class="sub" style="margin-top:6px">New here? Signing in creates your account.</p></div>
+    <button class="btn solid gbtn" id="google">Continue with Google</button>
+    <div class="or">or</div>
+    <label class="field"><span>Email</span><input class="input" id="email" type="email" placeholder="you@example.com" autocomplete="email"></label>
+    <button class="btn gbtn" id="emailbtn">Email me a code</button>
+    <p class="sub">Sign-in is handled by Privy. Nen never sees your password.</p>
+  </div>`; },
+
+overview(){ const k=state.keys.filter(k=>k.status==="active"); const spent=0.022, cap=1;
+  return consoleWrap("overview", `
+  <div class="tiles">
+    <div><p class="label">Available</p><b>${usd2(state.balance-state.held)}</b><p class="sub">${usd2(state.balance)} balance · ${usd2(state.held)} held for open payment channels</p></div>
+    <div><p class="label">Spent today</p><b>${meter(spent)}</b><div class="bar"><i style="width:${Math.max(2,spent/cap*100)}%"></i></div><p class="sub">of ${usd2(cap)} across all active keys</p></div>
+    <div><p class="label">Active keys</p><b>${k.length}</b><p class="sub">${k[0] ? `next expiry ${k[0].expires}` : "create one to start"}</p></div>
+  </div>
+  <div class="section"><div class="hd"><h3>Recent calls</h3><button class="btn small ghost" data-go="usage">All usage</button></div>${receiptsTable(4)}</div>
+  <div class="section"><div class="hd"><h3>Quick actions</h3></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn solid" data-go="keys" data-new="1">Create API key</button><button class="btn" data-go="wallet">Top up</button><button class="btn" data-go="agents">Connect an agent</button></div></div>`); },
+
+keys(){ return consoleWrap("keys", `
+  ${state.newSecret ? `<div class="secret" role="status">
+      <h3>Copy your new key now</h3><p class="sub" style="color:inherit">This is the only time Nen shows it. Store it as NEN_API_KEY where your agent runs.</p>
+      <div class="val"><code id="secretval">${state.newSecret}</code><button class="btn small solid" data-copy="secretval">Copy</button><button class="btn small" id="dismiss">I saved it</button></div>
+    </div>` : ""}
+  ${state.draft ? keyForm() : `<div class="hd" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><p class="muted">Keys let an agent spend from your balance, within the limits you set on each key.</p><button class="btn solid" id="newkey">Create API key</button></div>`}
+  <div class="tbox"><table style="min-width:820px">
+    <thead><tr><th>Key</th><th>Expires</th><th>Daily limit, all APIs</th><th>Per-API limits</th><th>Scopes</th><th>Status</th><th></th></tr></thead>
+    <tbody>${state.keys.map((k,i)=>`<tr>
+      <td><b style="font-weight:600">${esc(k.name)}</b><div class="tid">${k.prefix}…</div></td>
+      <td class="sub">${k.expires || "never"}</td>
+      <td style="min-width:11rem">${meter(k.spent)} <span class="sub">of ${usd2(k.daily)}</span><div class="bar ${k.status==="active"?"":"ok"}"><i style="width:${Math.min(100,Math.max(1,k.spent/k.daily*100))}%"></i></div></td>
+      <td class="sub">${k.perApi.length ? k.perApi.map(([id,t,v])=>`${esc(id.split("/")[1])}: ${t==="calls"?v+" calls":usd2(v)}`).join("<br>") : "none"}</td>
+      <td class="sub mono">${k.scopes.join(", ")}</td>
+      <td>${k.status==="active"?'<span class="pill ok">Active</span>':k.status==="expired"?'<span class="pill plain">Expired</span>':'<span class="pill bad">Revoked</span>'}</td>
+      <td class="r">${k.status==="active"?`<button class="btn small ghost" data-revoke="${i}">Revoke</button>`:""}</td>
+    </tr>`).join("")}</tbody></table></div>
+  <p class="sub" style="margin-top:12px">Limits reset at 00:00 UTC. A call that would cross a limit is refused before payment, and the agent gets <span class="mono">limit_reached</span> with the time the limit resets.</p>`); },
+
+wallet(){ const t=state.topup, fee=+(t.amount*NEN_FEE).toFixed(2), credit=+(t.amount-fee).toFixed(2);
+  return consoleWrap("wallet", `
+  <div class="tiles">
+    <div><p class="label">Balance</p><b>${usd2(state.balance)}</b><p class="sub">USDC, held in your Nen wallet</p></div>
+    <div><p class="label">Held</p><b>${usd2(state.held)}</b><p class="sub">Locked in open payment channels. Unused funds return to your balance.</p></div>
+    <div><p class="label">Available</p><b>${usd2(state.balance-state.held)}</b><p class="sub">What your keys can spend now</p></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><h3>Top up</h3><span class="sub">Minimum $5</span></div>
+    <div class="pb">
+      <div class="field"><span>Amount</span>
+        <div class="amounts">${[5,10,25,50].map(a=>`<button data-amt="${a}" aria-pressed="${t.amount===a}">$${a}</button>`).join("")}
+        <div class="money"><span>$</span><input id="amt" inputmode="decimal" aria-label="Custom amount" value="${[5,10,25,50].includes(t.amount)?"":t.amount}" placeholder="Other"></div></div>
+      </div>
+      <div class="field"><span>Pay with</span>
+        <div class="methods">
+          <button class="method" data-method="card" aria-pressed="${t.method==="card"}"><b>Card, Apple Pay, Google Pay</b><span>Privy on-ramp via Stripe or MoonPay. The on-ramp shows its own processing fee at checkout.</span></button>
+          <button class="method" data-method="base" aria-pressed="${t.method==="base"}"><b>USDC on Base</b><span>Send from any wallet or exchange to your deposit address.</span></button>
+          <button class="method" data-method="intents" aria-pressed="${t.method==="intents"}"><b>Any token via NEAR Intents</b><span>Pay from NEAR, Ethereum, Solana and more. Converted to USDC.</span></button>
+        </div>
+      </div>
+      ${t.method==="base" ? `<div class="field"><span>Deposit address (Base)</span><div class="addr"><code id="dep">0xcB9fFe1087b5442ceEf609361CE633B1795C21cA</code><button class="btn small ghost" data-copy="dep">Copy</button></div><small>Send USDC only, on Base. Other tokens or networks sent here can be lost.</small></div>` : ""}
+      <div class="calc" aria-live="polite">
+        <div><span>You pay</span><span class="num">${usd2(t.amount)}</span></div>
+        <div><span>Nen fee (${(NEN_FEE*100).toFixed(0)}%, draft rate)</span><span class="num">−${usd2(fee)}</span></div>
+        <div class="tot"><span>Added to your balance</span><span class="num">${usd2(credit)}</span></div>
+      </div>
+    </div>
+    <div class="pf"><button class="btn copper" id="pay" ${t.amount>=5?"":"disabled"}>${t.method==="card"?`Continue to payment · ${usd2(t.amount)}`:t.method==="base"?"I've sent it":`Get a NEAR Intents quote`}</button></div>
+  </div>
+  <div class="section"><div class="hd"><h3>Top-up history</h3></div>
+  <div class="tbox"><table style="min-width:520px"><thead><tr><th>Date</th><th>Activity</th><th class="r">Paid</th><th class="r">Credited</th></tr></thead>
+  <tbody>${state.activity.map(([d,a,p,c])=>`<tr><td class="sub">${d}</td><td>${esc(a)}</td><td class="r num">${usd2(p)}</td><td class="r num">${usd2(c)}</td></tr>`).join("")}</tbody></table></div></div>`); },
+
+usage(){ return consoleWrap("usage", `
+  <div class="tiles">
+    <div><p class="label">Calls today</p><b>22</b><p class="sub">22 paid · 7 failed, not charged</p></div>
+    <div><p class="label">Spent today</p><b>${meter("0.022")}</b><p class="sub">research-agent</p></div>
+    <div><p class="label">nen/near-account</p><b>22<span class="sub" style="font-size:.9rem"> / 200 calls</span></b><div class="bar"><i style="width:11%"></i></div><p class="sub">per-API limit on research-agent</p></div>
+  </div>
+  <div class="section"><div class="hd"><h3>Receipts</h3><span class="sub">Real testnet receipts from payer 0xcB9f…21cA</span></div>${receiptsTable(99)}</div>
+  <p class="sub" style="margin-top:12px">Rows with a transaction are payment-channel deposits, signed by NEAR Chain Signatures. Other calls are vouchers against that deposit.</p>`); }
+};
+
+function apiDetail(a){ const r=a.review; return `
+  <article class="detail" aria-label="${esc(a.name)}">
+    <div class="dh"><div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2>${esc(a.name)}</h2>${pillFor(a.state)}</div>
+      <p class="tid" style="margin-top:6px">${a.id} · by ${esc(a.provider)}</p><p style="margin-top:10px;max-width:64ch">${esc(a.desc)}</p></div>
+      ${a.state==="live" ? `<div><button class="btn small ghost" data-copy="call-${a.id}">Copy call</button></div>` : ""}</div>
+    <div class="statline">
+      <div><b>${a.price ? meter(a.price) : "—"}</b><span>per call${a.network?" · USDC on "+a.network:""}</span></div>
+      <div><b>${a.empty ? (a.empty==="free"?"Not charged":"Charged") : "—"}</b><span>when the result is empty</span></div>
+      <div><b>${a.state==="planned"?"—":"Not charged"}</b><span>when the call fails</span></div>
+      <div><b>${esc(a.health)}</b><span>observed</span></div>
+    </div>
+    <div class="db">
+      <div class="stack">
+        <p class="label">Call it</p><pre id="call-${a.id}">run({ listing_id: "${a.id}",
+     input: ${esc(a.input)} })</pre>
+        <p class="label" style="margin-top:6px">Returns</p><pre>${esc(a.output)}</pre>
+      </div>
+      <div class="stack">
+        <p class="label">Review</p>
+        <dl class="kv">
+          <dt>Status</dt><dd>${r ? esc(r.status) : "Not submitted"}</dd>
+          ${r?.by ? `<dt>Reviewer</dt><dd>${esc(r.by)} · ${r.at}</dd>` : ""}
+          ${r ? `<dt>Manifest</dt><dd class="mono">${r.sha} ${r.match ? "= approved ✓" : "· no approval yet"}</dd>` : ""}
+          ${a.schemes ? `<dt>Payment</dt><dd>x402 V2 · ${esc(a.schemes)}</dd>` : ""}
+          <dt>Sources</dt><dd>${esc(a.sources)}</dd>
+          <dt>License</dt><dd>${esc(a.license)}</dd>
+        </dl>
+        ${a.bot ? `<p class="label" style="margin-top:6px">Bot check</p><ul class="checks">${a.bot.map(([id,ok,d])=>`<li><span class="${ok?"y":"n"}">${ok?"✓":"✕"}</span><span class="id">${id}</span><span>${esc(d)}</span></li>`).join("")}</ul>` : ""}
+      </div>
+    </div>
+  </article>`; }
+
+function receiptsTable(n){ return `<div class="tbox"><table style="min-width:700px">
+  <thead><tr><th>Time (UTC)</th><th>Receipt</th><th>API</th><th>Status</th><th class="r">Charged</th><th class="r">Latency</th><th>Settlement</th></tr></thead>
+  <tbody>${RECEIPTS.slice(0,n).map(([t,id,api,p,lat,tx])=>`<tr>
+    <td class="tid">11-03 ${t}</td><td class="tid">${id}</td><td class="tid">${api}</td><td><span class="pill ok">paid_ok</span></td>
+    <td class="r">${meter(p)}</td><td class="r num sub">${lat.toLocaleString()} ms</td>
+    <td class="tid">${tx ? `<a href="https://sepolia.basescan.org/tx/${tx}">deposit ${short(tx)}</a>` : "voucher"}</td></tr>`).join("")}</tbody></table></div>`; }
+
+function consoleWrap(cur, body){
+  const titles = { overview:"Overview", keys:"API keys", wallet:"Wallet", usage:"Usage" };
+  return `<div class="preview-note">Console preview. Sign-in, payments and keys are not connected yet; balances and keys are sample data. Receipts are real testnet receipts.</div>
+  <div class="console">
+    <nav class="rail" aria-label="Console">
+      <div class="who"><b>${esc(state.email)}</b><span>NEAR account a91f…3c0e (created at sign-in)</span></div>
+      ${CONSOLE.map(v=>`<a href="#${v}" data-go="${v}" ${v===cur?'aria-current="page"':""}>${titles[v]}${v==="keys"?`<span class="sub">${state.keys.filter(k=>k.status==="active").length}</span>`:""}</a>`).join("")}
+      <a href="#home" id="signout">Sign out</a>
+    </nav>
+    <div style="min-width:0"><h1 style="font-size:1.6rem;margin-bottom:20px">${titles[cur]}</h1>${body}</div>
+  </div>`; }
+
+function keyForm(){ const d=state.draft; const apiOpts = APIS.filter(a=>a.state==="live"||a.state==="review");
+  return `<div class="panel" id="keyform">
+    <div class="ph"><h3>New API key</h3><button class="btn small ghost" id="cancelkey">Cancel</button></div>
+    <div class="pb">
+      <div class="grid2">
+        <label class="field"><span>Name</span><input class="input" id="kname" value="${esc(d.name)}" placeholder="research-agent"><small>Shown in usage, so you can tell agents apart.</small></label>
+        <div class="field"><span>Expires</span>
+          <div class="seg">${[["7","7 days"],["30","30 days"],["90","90 days"],["custom","Date"]].map(([v,l])=>`<button data-exp="${v}" aria-pressed="${d.exp===v}">${l}</button>`).join("")}</div>
+          ${d.exp==="custom" ? `<input class="input" id="kdate" type="date" min="${addDays(1)}" value="${d.date}" style="max-width:12rem">` : `<small>Stops working on ${addDays(+d.exp)}.</small>`}
+        </div>
+      </div>
+      <label class="field"><span>Daily limit, all APIs</span><div class="money"><span>$</span><input id="kdaily" inputmode="decimal" value="${esc(d.daily)}"></div><small>The most this key can spend per day across every API.</small></label>
+      <div class="field"><span>Limits per API <span class="muted" style="font-weight:400">(optional)</span></span>
+        <div class="limits">${d.perApi.map(([id,t,v],i)=>`<div class="limit-row">
+          <select data-lapi="${i}" aria-label="API">${apiOpts.map(a=>`<option value="${a.id}" ${a.id===id?"selected":""}>${a.id}</option>`).join("")}</select>
+          <select data-ltype="${i}" aria-label="Limit type"><option value="usd" ${t==="usd"?"selected":""}>USD per day</option><option value="calls" ${t==="calls"?"selected":""}>Calls per day</option></select>
+          <input class="input" data-lval="${i}" inputmode="decimal" value="${esc(v)}" aria-label="Limit">
+          <button class="iconbtn" data-ldel="${i}" aria-label="Remove limit">×</button></div>`).join("")}
+          <div><button class="btn small ghost" id="addlimit">Add a limit for one API</button></div>
+        </div>
+        <small>A per-API limit can't raise the daily limit above. Whichever is reached first stops the call.</small>
+      </div>
+      <div class="field"><span>What this key can do</span>
+        <div class="scopes">
+          <label><input type="checkbox" data-scope="run" ${d.scopes.includes("run")?"checked":""}><span><code>run</code> · pay for API calls within the limits above</span></label>
+          <label><input type="checkbox" data-scope="receipts" ${d.scopes.includes("receipts")?"checked":""}><span><code>receipts</code> · read this key's receipts and spend</span></label>
+          <label><input type="checkbox" data-scope="topups" ${d.scopes.includes("topups")?"checked":""}><span><code>topups</code> · create top-up links for you to pay. Off by default: the agent can ask for money but never pays it in.</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="pf"><span class="sub" style="margin-right:auto;align-self:center" id="kerr"></span><button class="btn solid" id="createkey">Create key</button></div>
+  </div>`; }
+
+/* ---------- router ---------- */
+function current(){ const h = location.hash.slice(1); if (VIEWS[h]) return h; return "home"; }
+function go(v){ if (CONSOLE.includes(v) && !state.signedIn) v = "signin"; if (location.hash.slice(1) !== v) location.hash = v; else render(); }
+function render(){
+  let v = current();
+  if (CONSOLE.includes(v) && !state.signedIn) v = "signin";
+  if (v === "signin" && state.signedIn) v = "overview";
+  $("#app").innerHTML = `<div class="view">${VIEWS[v]()}</div>`;
+  document.querySelectorAll(".navlinks a[data-go]").forEach(a => a.toggleAttribute("aria-current", a.dataset.go === v) || a.removeAttribute("aria-current"));
+  document.querySelectorAll(".navlinks a[data-go]").forEach(a => { if (a.dataset.go === v) a.setAttribute("aria-current","page"); });
+  const ab = $("#authbtn"); ab.textContent = state.signedIn ? "Console" : "Sign in"; ab.dataset.go = state.signedIn ? "overview" : "signin";
 }
-function toggle(id) { state.open = state.open === id ? null : id; renderRows(); }
-document.getElementById("rows").addEventListener("click", e => { const r = e.target.closest("tr.row"); if (r) toggle(r.dataset.id); });
-document.getElementById("rows").addEventListener("keydown", e => { const r = e.target.closest("tr.row"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(r.dataset.id); } });
-document.getElementById("q").addEventListener("input", e => { state.q = e.target.value; renderRows(); });
-document.querySelectorAll(".chip[data-cat]").forEach(b => b.addEventListener("click", () => {
-  state.cat = b.dataset.cat;
-  document.querySelectorAll(".chip[data-cat]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
-  renderRows();
-}));
-document.getElementById("live").addEventListener("click", e => {
-  state.live = !state.live; e.currentTarget.setAttribute("aria-pressed", String(state.live)); renderRows();
+window.addEventListener("hashchange", () => { render(); window.scrollTo(0,0); });
+
+/* ---------- events (delegated) ---------- */
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, a, tr"); if (!t) return;
+  if (t.id === "signout") { e.preventDefault(); state.signedIn = false; go("home"); toast("Signed out"); return; }
+  if (t.dataset.go) { e.preventDefault(); if (t.dataset.new) state.draft = newDraft(); go(t.dataset.go); return; }
+  if (t.dataset.copy) { const el = document.getElementById(t.dataset.copy); if (el) copy(el.textContent, t); return; }
+  if (t.dataset.api) { state.openApi = state.openApi === t.dataset.api ? null : t.dataset.api; render(); return; }
+  if (t.dataset.filter) { state.apiFilter = t.dataset.filter; render(); return; }
+  if (t.id === "google" || t.id === "emailbtn") {
+    if (t.id === "emailbtn") { const em = $("#email").value.trim(); if (!/^\S+@\S+\.\S+$/.test(em)) { toast("Enter an email address like you@example.com"); return; } state.email = em; }
+    state.signedIn = true; go("overview"); toast("Signed in (preview)"); return; }
+  if (t.id === "newkey") { state.draft = newDraft(); state.newSecret = null; render(); return; }
+  if (t.id === "cancelkey") { state.draft = null; render(); return; }
+  if (t.dataset.exp) { syncDraft(); state.draft.exp = t.dataset.exp; render(); return; }
+  if (t.id === "addlimit") { syncDraft(); state.draft.perApi.push(["nen/near-account","calls","100"]); render(); return; }
+  if (t.dataset.ldel) { syncDraft(); state.draft.perApi.splice(+t.dataset.ldel,1); render(); return; }
+  if (t.id === "createkey") { createKey(); return; }
+  if (t.id === "dismiss") { state.newSecret = null; render(); return; }
+  if (t.dataset.revoke) { const k = state.keys[+t.dataset.revoke]; k.status = "revoked"; render(); toast(`Revoked ${k.name}. Calls with it now fail with key_revoked.`); return; }
+  if (t.dataset.amt) { state.topup.amount = +t.dataset.amt; render(); return; }
+  if (t.dataset.method) { state.topup.method = t.dataset.method; render(); return; }
+  if (t.id === "pay") { toast(state.topup.method==="card" ? "Preview: the Privy on-ramp opens here once it's connected" : state.topup.method==="base" ? "Preview: Nen credits your balance when the deposit confirms" : "Preview: a NEAR Intents quote appears here"); return; }
+});
+document.addEventListener("keydown", e => { const r = e.target.closest?.("tr[data-api]"); if (r && (e.key==="Enter"||e.key===" ")) { e.preventDefault(); r.click(); } });
+document.addEventListener("input", e => {
+  if (e.target.id === "apiq") { state.apiQuery = e.target.value; const pos = e.target.selectionStart; render(); const q=$("#apiq"); q.focus(); q.setSelectionRange(pos,pos); }
+  if (e.target.id === "amt") { const v = parseFloat(e.target.value); if (!isNaN(v)) { state.topup.amount = Math.round(v*100)/100; const pos=e.target.selectionStart; render(); const a=$("#amt"); a.focus(); a.setSelectionRange(pos,pos); } }
 });
 
-document.getElementById("rcpts").innerHTML = RECEIPTS.map(([t, id, st, usd, sign, lat, tx]) => `<tr>
-  <td class="mono num">2026-11-03 ${t}</td><td class="mono">${id}…</td>
-  <td><span class="pill ok">${st}</span></td><td class="price num">$${usd}</td>
-  <td class="price num">${sign.toLocaleString()} ms</td><td class="price num">${lat.toLocaleString()} ms</td>
-  <td class="mono">${tx ? `<a href="https://sepolia.basescan.org/tx/${tx}">deposit ${short(tx)}</a>` : `<span class="sub">voucher</span>`}</td></tr>`).join("");
-document.getElementById("botchecks").innerHTML = checksHtml(BOT);
-
-document.querySelectorAll("[data-jump]").forEach(a => a.addEventListener("click", e => {
-  const el = document.getElementById(a.dataset.jump); if (!el) return;
-  e.preventDefault(); el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-}));
-document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
-  const pre = document.getElementById(b.dataset.copy);
-  const done = () => { b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1500); };
-  navigator.clipboard?.writeText(pre.textContent).then(done, () => {
-    const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Press Ctrl+C";
-  }) ?? (() => { const r = document.createRange(); r.selectNodeContents(pre); getSelection().removeAllRanges(); getSelection().addRange(r); })();
-}));
-
-state.open = "nen/near-account";
-renderRows();
+function newDraft(){ return { name:"", exp:"30", date:addDays(30), daily:"1.00", perApi:[["nansen/smart-money-holdings","usd","0.50"]], scopes:["run","receipts"] }; }
+function syncDraft(){ const d = state.draft; if (!d || !$("#keyform")) return;
+  d.name = $("#kname").value; d.daily = $("#kdaily").value; if ($("#kdate")) d.date = $("#kdate").value;
+  d.perApi = d.perApi.map((_,i)=>[document.querySelector(`[data-lapi="${i}"]`).value, document.querySelector(`[data-ltype="${i}"]`).value, document.querySelector(`[data-lval="${i}"]`).value]);
+  d.scopes = [...document.querySelectorAll("[data-scope]")].filter(c=>c.checked).map(c=>c.dataset.scope); }
+function createKey(){ syncDraft(); const d = state.draft, err = $("#kerr");
+  const daily = parseFloat(d.daily);
+  if (!d.name.trim()) { err.textContent = "Give the key a name."; $("#kname").focus(); return; }
+  if (!(daily > 0)) { err.textContent = "Set a daily limit above $0."; $("#kdaily").focus(); return; }
+  if (d.exp === "custom" && !d.date) { err.textContent = "Pick an expiry date."; return; }
+  const bad = d.perApi.find(([,,v]) => !(parseFloat(v) > 0)); if (bad) { err.textContent = `Set a limit above 0 for ${bad[0]}, or remove that row.`; return; }
+  const over = d.perApi.find(([,t,v]) => t==="usd" && parseFloat(v) > daily); if (over) { err.textContent = `${over[0]} is limited to more than the daily limit for all APIs.`; return; }
+  if (!d.scopes.includes("run")) { err.textContent = "Without run, the agent can't pay for any call."; }
+  const secret = randKey();
+  state.keys.unshift({ name:d.name.trim(), prefix:secret.slice(0,16), created:addDays(0), expires:d.exp==="custom"?d.date:addDays(+d.exp),
+    daily:daily.toFixed(2), spent:"0", perApi:d.perApi.map(([id,t,v])=>[id,t,t==="usd"?(+v).toFixed(2):String(parseInt(v))]), scopes:d.scopes, status:"active" });
+  state.newSecret = secret; state.draft = null; render(); window.scrollTo(0,0);
+}
+render();
 </script>
