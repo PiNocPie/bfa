@@ -424,14 +424,14 @@ const RECEIPTS = [
 ];
 const state = {
   signedIn:false, email:"you@gmail.com",
-  balance:4.93, held:0.05,
+  balance:5.00, held:0.05,
   keys:[
     { name:"research-agent", prefix:"bfa_sk_test_7Qd2", created:"2026-11-01", expires:"2026-12-01", daily:"1.00", spent:"0.022",
       perApi:[["bfa/near-account","calls","200"],["nansen/smart-money-holdings","usd","0.50"]], scopes:["run","receipts"], status:"active" },
     { name:"ci-smoke-test", prefix:"bfa_sk_test_k91x", created:"2026-10-20", expires:"2026-10-27", daily:"0.10", spent:"0",
       perApi:[], scopes:["run"], status:"expired" }
   ],
-  activity:[["2026-11-01","Top-up · card","5.00","4.93"],["2026-11-01","Sign-up credit","0.00","0.00"]],
+  activity:[["2026-11-01","Top-up · card","5.08","5.00"],["2026-11-01","Sign-up credit","0.00","0.00"]],
   client:"claude-code", apiFilter:"all", apiQuery:"", openApi:"bfa/near-account",
   draft:null, newSecret:null,
   topup:{ amount:10, method:"card" }
@@ -495,7 +495,7 @@ home(){ return `
   <div class="rows">
     <div class="row3">
       <h2>For the person</h2>
-      <p>Your money stays in your own wallet, controlled by your NEAR account. Top up by card through Privy's on-ramp (Stripe or MoonPay), with USDC on Base, or with anything NEAR Intents can bridge. The 1.5% fee is shown before you pay.</p>
+      <p>Your money stays in your own wallet, controlled by your NEAR account. Top up by card through Privy's on-ramp (Stripe or MoonPay), with USDC on Base, or with anything NEAR Intents can bridge. The 1.5% fee is added on top and shown before you pay.</p>
       <ol class="steps"><li>Sign in with Google</li><li>Top up $5 or more</li><li>Create a key with limits</li><li>Paste it into your agent</li></ol>
     </div>
     <div class="row3">
@@ -631,7 +631,7 @@ keys(){ return consoleWrap("keys", `
     </tr>`).join("")}</tbody></table></div>
   <p class="sub" style="margin-top:12px">Limits reset at 00:00 UTC. A call that would cross a limit is refused before payment, and the agent gets <span class="mono">limit_reached</span> with the time the limit resets.</p>`); },
 
-wallet(){ const t=state.topup, fee=Math.round(t.amount*100*BFA_FEE)/100, credit=+(t.amount-fee).toFixed(2);
+wallet(){ const t=state.topup, fee=Math.round(t.amount*100*BFA_FEE)/100, total=+(t.amount+fee).toFixed(2);
   return consoleWrap("wallet", `
   <div class="tiles">
     <div><p class="label">Balance</p><b>${usd2(state.balance)}</b><p class="sub">USDC in your own wallet. BFA can't move it.</p></div>
@@ -641,7 +641,7 @@ wallet(){ const t=state.topup, fee=Math.round(t.amount*100*BFA_FEE)/100, credit=
   <div class="panel">
     <div class="ph"><h3>Top up</h3><span class="sub">Minimum $5 · 1.5% fee</span></div>
     <div class="pb">
-      <div class="field"><span>Amount</span>
+      <div class="field"><span>Amount to add to your wallet</span>
         <div class="amounts">${[5,10,25,50].map(a=>`<button data-amt="${a}" aria-pressed="${t.amount===a}">$${a}</button>`).join("")}
         <div class="money"><span>$</span><input id="amt" inputmode="decimal" aria-label="Custom amount" value="${[5,10,25,50].includes(t.amount)?"":t.amount}" placeholder="Other"></div></div>
       </div>
@@ -652,14 +652,14 @@ wallet(){ const t=state.topup, fee=Math.round(t.amount*100*BFA_FEE)/100, credit=
           <button class="method" data-method="intents" aria-pressed="${t.method==="intents"}"><b>Any token via NEAR Intents</b><span>Pay from NEAR, Ethereum, Solana and more. Converted to USDC.</span></button>
         </div>
       </div>
-      ${t.method==="base" ? `<div class="field"><span>Your top-up address (Base)</span><div class="addr"><code id="dep">0x…your address appears after sign-in</code><button class="btn small ghost" data-copy="dep">Copy</button></div><small>Send USDC only, on Base. A public contract splits each deposit: 98.5% to your wallet, 1.5% to BFA. Nobody, including BFA, can send it anywhere else.</small></div>` : ""}
+      ${t.method==="base" ? `<div class="field"><span>Your top-up address (Base)</span><div class="addr"><code id="dep">0x…your address appears after sign-in</code><button class="btn small ghost" data-copy="dep">Copy</button></div><small>Send USDC only, on Base. Send ${usd2(total)} to add ${usd2(t.amount)}. A public contract splits each deposit: the fee (1.5% on top) goes to BFA and the rest to your wallet. Nobody, including BFA, can send it anywhere else.</small></div>` : ""}
       <div class="calc" aria-live="polite">
-        <div><span>You pay</span><span class="num">${usd2(t.amount)}</span></div>
-        <div><span>BFA fee (${(BFA_FEE*100).toFixed(1)}%)</span><span class="num">−${usd2(fee)}</span></div>
-        <div class="tot"><span>Lands in your wallet</span><span class="num">${usd2(credit)}</span></div>
+        <div><span>Lands in your wallet</span><span class="num">${usd2(t.amount)}</span></div>
+        <div><span>BFA fee (${(BFA_FEE*100).toFixed(1)}%)</span><span class="num">+${usd2(fee)}</span></div>
+        <div class="tot"><span>You pay</span><span class="num">${usd2(total)}</span></div>
       </div>
     </div>
-    <div class="pf"><button class="btn accent" id="pay" ${t.amount>=5?"":"disabled"}>${t.method==="card"?`Continue to payment · ${usd2(t.amount)}`:t.method==="base"?"I've sent it":`Get a NEAR Intents quote`}</button></div>
+    <div class="pf"><button class="btn accent" id="pay" ${t.amount>=5?"":"disabled"}>${t.method==="card"?`Continue to payment · ${usd2(total)}`:t.method==="base"?"I've sent it":`Get a NEAR Intents quote`}</button></div>
   </div>
   <div class="section"><div class="hd"><h3>Top-up history</h3></div>
   <div class="tbox"><table style="min-width:520px"><thead><tr><th>Date</th><th>Activity</th><th class="r">Paid</th><th class="r">Credited</th></tr></thead>
