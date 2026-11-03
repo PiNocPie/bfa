@@ -56,6 +56,21 @@
 - **Sell an API:** ขั้นตอน 4 ขั้น พร้อมตัวอย่างรายงานจากบอท
 - **Console:** Overview, API keys, Wallet, Usage
 
+## API social (X, Instagram, TikTok): เริ่มจากต่อยอดของคนอื่นก่อน
+
+แผนคือเปิดขาย API social ก่อนโดยต่อยอดจากผู้ให้บริการที่มีอยู่แล้ว ระหว่างนั้นค่อยหาทางทำของเราเอง ในเว็บใส่ไว้ 4 ตัว สถานะ Planned:
+- X post search
+- Instagram profile
+- TikTok creator videos
+- TikTok hashtag videos
+
+ราคาต้นทางที่เห็นผ่าน Monid discover (2026-11-03) ถูกมาก: X search ~$0.0005–0.001/call, Instagram profile ~$0.001–0.015/call, TikTok ~$0.0006–0.0036/call เราจึงตั้งราคาต่อ call แบบคงที่ได้ เช่น จำกัดผลลัพธ์ไว้ 20 รายการต่อ call
+
+**ข้อห้ามที่ต้องรู้ก่อน:** ข้อตกลงการใช้งาน (Terms) ของ Monid ฉบับ 16 ต.ค. 2026 ห้ามขายต่อหรือใช้เชิงพาณิชย์โดยไม่มีหนังสืออนุญาต และห้ามใช้ "as part of any effort to compete with us" แม้หน้า docs เรื่อง proxy จะบอกว่า "bill your own way… with or without markup" แต่ Terms ขัดกัน และ Nen เป็นคู่แข่งโดยตรง ดังนั้น:
+1. **ห้ามขาย social API ผ่าน Monid จนกว่าจะได้หนังสืออนุญาต** ให้อีเมลไปขอ partnership ที่ support@monid.ai ก่อน
+2. **ทางที่ปลอดภัยกว่า:** ต่อกับผู้ให้บริการต้นทางโดยตรง เช่น AnyAPI, TikHub, SerpApi หรือ Apify ซึ่งแต่ละเจ้ามี API ของตัวเอง ต้องอ่าน Terms เรื่องการขายต่อของแต่ละเจ้าก่อนเหมือนกัน
+3. **ข้อมูล social มีความเสี่ยงทางกฎหมายของตัวมันเอง:** การ scrape X/Instagram/TikTok ขัดกับ Terms ของแพลตฟอร์มเหล่านั้น ต้องระบุแหล่งข้อมูลและ license ใน `nen.json` ทุกตัว
+
 ## ทำไมต้อง NEAR (ข้อนี้สำคัญที่สุดสำหรับ judge)
 
 1. **ทุกคนที่ login ได้บัญชี NEAR** แม้จะ login ด้วย Google ก็ตาม คนใช้ไม่ต้องรู้เลย
