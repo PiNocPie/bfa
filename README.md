@@ -140,6 +140,9 @@ Listing is free and BFA takes no cut of call payments: agents pay your `payTo` d
 | `packages/x402-client` | Paying client, signers (local key for tests, NEAR Chain Signatures), batch-settlement session, listing bot |
 | `packages/mcp-server` | The 7 MCP tools above |
 | `packages/demo-seller` | x402 seller selling a NEAR-native endpoint (`/near/account`) on Base Sepolia |
+| `contracts/treasury` | NEAR contract: per-user vaults with an on-chain daily limit, signing through Chain Signatures |
+| `contracts/fee-splitter` | Base contracts: per-user top-up addresses that split the 1.5% fee without custody |
+| `site/` | Website preview and the BB mascot (`mascot.svg`) |
 | `registry/` | Public listings, reviews and JSON Schemas |
 | `examples/dev-registry/` | Reviewed listing for the localhost demo seller |
 | `docs/research/competitor-ux.md` | Survey of other agent API markets |
@@ -153,12 +156,14 @@ Listing is free and BFA takes no cut of call payments: agents pay your `payTo` d
 - All 7 MCP tools, driven by the official MCP client over stdio (`packages/mcp-server/scripts/smoke.mjs`).
 - Review gating by manifest hash, the daily cap and idempotency.
 - Failed calls cost $0: in live runs, RPC outages came back as `unpaid_error` receipts. There is no automated test for this path yet.
+- **On-chain spending policy (BFA treasury).** [`treasury.nen-testnet.testnet`](contracts/treasury/README.md) signs only USDC EIP-3009 authorizations for a user's vault, after checking its daily limit, allowed recipients and tokens. The smoke run paid from the vault address `0x4752…82C6` with the channel deposit signed through the treasury ([`0x1e20c350…ed37`](https://sepolia.basescan.org/tx/0x1e20c3505732b51dac3e95027671c07386c5ddf5ed9ec84e1a7468e49276ed37)); an over-limit request was refused on-chain with `limit_reached`. Set `BFA_TREASURY_ID` to use it.
+- **Non-custodial top-up fee.** [`contracts/fee-splitter`](contracts/fee-splitter/README.md): each user gets a deterministic top-up address; anyone can sweep it, and it can only pay the user's wallet and BFA's 1.5% on-top fee (send $10.15, get $10.00). 18 tests on an in-process EVM. Not deployed yet: the deployer needs Base Sepolia ETH.
 
 **Not done yet**
 - The demo seller runs on localhost only. It is not deployed at a public https URL, so `submit_listing` on it correctly fails `public_https`.
 - `nansen/smart-money-holdings` is listed but not reviewed, so it does not route. We have not made a paid mainnet call to it.
 - Seller payout through NEAR Intents (`payout.via: "near-intents"`) is in the schema only. Nothing executes it yet.
-- No web UI.
+- The website ([`site/index.html`](site/index.html)) is a preview: sign-in (Privy), card top-ups, auto top-up and API keys are not wired to a backend yet.
 - The MCP server has no unit tests. It is covered only by the live smoke script.
 - Mainnet: not yet.
 
