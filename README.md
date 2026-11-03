@@ -140,6 +140,7 @@ Listing is free and BFA takes no cut of call payments: agents pay your `payTo` d
 | `packages/x402-client` | Paying client, signers (local key for tests, NEAR Chain Signatures), batch-settlement session, listing bot |
 | `packages/mcp-server` | The 7 MCP tools above |
 | `packages/demo-seller` | x402 seller selling a NEAR-native endpoint (`/near/account`) on Base Sepolia |
+| `packages/gateway` | Hosted MCP endpoint (`/v1`, Streamable HTTP) with BFA API keys: expiry, daily and per-API limits, allow/block lists, scopes; file or Supabase storage |
 | `contracts/treasury` | NEAR contract: per-user vaults with an on-chain daily limit, signing through Chain Signatures |
 | `contracts/fee-splitter` | Base contracts: per-user top-up addresses that split the 1.5% fee without custody |
 | `site/` | Website preview and the BB mascot (`mascot.svg`) |
@@ -157,6 +158,7 @@ Listing is free and BFA takes no cut of call payments: agents pay your `payTo` d
 - Review gating by manifest hash, the daily cap and idempotency.
 - Failed calls cost $0: in live runs, RPC outages came back as `unpaid_error` receipts. There is no automated test for this path yet.
 - **On-chain spending policy (BFA treasury).** [`treasury.nen-testnet.testnet`](contracts/treasury/README.md) signs only USDC EIP-3009 authorizations for a user's vault, after checking its daily limit, allowed recipients and tokens. The smoke run paid from the vault address `0x4752…82C6` with the channel deposit signed through the treasury ([`0x1e20c350…ed37`](https://sepolia.basescan.org/tx/0x1e20c3505732b51dac3e95027671c07386c5ddf5ed9ec84e1a7468e49276ed37)); an over-limit request was refused on-chain with `limit_reached`. Set `BFA_TREASURY_ID` to use it.
+- **API-key gateway.** `packages/gateway` enforces each key's expiry, scopes, allow/block list, daily limit and per-API limits before any payment is signed. Live run on testnet through the treasury: no key → 401, two paid calls, the third refused with `limit_reached` and `resets_at`. 28 offline tests; the Supabase store is tested against a mock only.
 - **Non-custodial top-up fee.** [`contracts/fee-splitter`](contracts/fee-splitter/README.md): each user gets a deterministic top-up address; anyone can sweep it, and it can only pay the user's wallet and BFA's 1.5% on-top fee (send $10.15, get $10.00). 18 tests on an in-process EVM. Not deployed yet: the deployer needs Base Sepolia ETH.
 
 **Not done yet**
