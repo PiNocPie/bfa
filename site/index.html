@@ -4,12 +4,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700&family=Albert+Sans:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: a metered ledger. Sage paper, copper meter needle, every price printed to USDC's 6 decimals.
+/* Layout: a metered ledger. Sage paper, NEAR-green meter needle, every price printed to USDC's 6 decimals.
    Public pages (home, APIs) on top; signed-in console (overview, keys, wallet, usage) with a left rail. */
 :root{
   --paper:#eceee7; --sheet:#fafaf6; --ink:#161a14; --muted:#5b6256; --faint:#8a9184; --rule:#d5d9cd;
-  --copper:#b4532a; --copper-soft:#f3e2d8; --on-copper:#fffaf5;
-  --ok:#2b7a4b; --ok-soft:#dcefe2; --info:#3d5d99; --info-soft:#e0e7f5; --bad:#b3362b; --bad-soft:#f6e0dc;
+  --accent:#00774c; --accent-fill:#00ec97; --accent-soft:#d3f5e6; --on-accent:#08140e;
+  --ok:#1f6f5c; --ok-soft:#dcefe8; --info:#3d5d99; --info-soft:#e0e7f5; --bad:#b3362b; --bad-soft:#f6e0dc;
   --code:#e4e7dd;
   --f-mono:"Martian Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --f-body:"Albert Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -17,20 +17,20 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --paper:#111410; --sheet:#191d17; --ink:#e7eae0; --muted:#9ba393; --faint:#6f776a; --rule:#2b3128;
-  --copper:#e2804f; --copper-soft:#3a2219; --on-copper:#1a0f09;
+  --accent:#00ec97; --accent-fill:#00ec97; --accent-soft:#0d3123; --on-accent:#06130d;
   --ok:#6fcf97; --ok-soft:#163222; --info:#93b2ff; --info-soft:#1c2740; --bad:#ff8c7d; --bad-soft:#3b1c18;
   --code:#20251e; color-scheme:dark}}
 :root[data-theme="dark"]{
   --paper:#111410; --sheet:#191d17; --ink:#e7eae0; --muted:#9ba393; --faint:#6f776a; --rule:#2b3128;
-  --copper:#e2804f; --copper-soft:#3a2219; --on-copper:#1a0f09;
+  --accent:#00ec97; --accent-fill:#00ec97; --accent-soft:#0d3123; --on-accent:#06130d;
   --ok:#6fcf97; --ok-soft:#163222; --info:#93b2ff; --info-soft:#1c2740; --bad:#ff8c7d; --bad-soft:#3b1c18;
   --code:#20251e; color-scheme:dark}
 
 *{box-sizing:border-box}
 html,body{min-height:100%}
 body{background:var(--paper);color:var(--ink);font:400 15px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
-a{color:inherit;text-underline-offset:3px;text-decoration-color:var(--copper)}
-:focus-visible{outline:2px solid var(--copper);outline-offset:2px}
+a{color:inherit;text-underline-offset:3px;text-decoration-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 h1,h2,h3{margin:0;text-wrap:balance}
 h1{font:700 clamp(1.9rem,4.4vw,3.1rem)/1.08 var(--f-mono);letter-spacing:-.04em}
 h2{font:700 1.35rem/1.2 var(--f-mono);letter-spacing:-.03em}
@@ -47,24 +47,24 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--paper);border-bottom:1px solid var(--ink)}
 .top .wrap{display:flex;align-items:center;gap:22px;padding-block:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:baseline;gap:8px;text-decoration:none;font:700 1.15rem/1 var(--f-mono);letter-spacing:-.04em}
-.brand i{font-style:normal;font:500 .62rem/1 var(--f-mono);color:var(--copper);letter-spacing:.06em}
+.brand i{font-style:normal;font:500 .62rem/1 var(--f-mono);color:var(--accent);letter-spacing:.06em}
 .navlinks{display:flex;gap:18px;flex-wrap:wrap;font-size:.92rem}
 .navlinks a{text-decoration:none;color:var(--muted);padding-block:4px;border-bottom:2px solid transparent}
-.navlinks a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--copper)}
+.navlinks a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent-fill)}
 .top .right{margin-left:auto;display:flex;gap:10px;align-items:center}
 .net{font:500 .64rem/1 var(--f-mono);letter-spacing:.06em;padding:6px 8px;border:1px dashed var(--muted);border-radius:999px;color:var(--muted);white-space:nowrap}
 
 .btn{display:inline-flex;align-items:center;gap:8px;font:600 .9rem/1 var(--f-body);padding:11px 15px;border-radius:var(--r);border:1px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;text-decoration:none;white-space:nowrap}
 .btn:hover{background:var(--sheet)}
 .btn.solid{background:var(--ink);color:var(--paper)}
-.btn.solid:hover{background:var(--copper);border-color:var(--copper);color:var(--on-copper)}
-.btn.copper{background:var(--copper);border-color:var(--copper);color:var(--on-copper)}
+.btn.solid:hover{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--on-accent)}
+.btn.accent{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--on-accent)}
 .btn.small{padding:7px 10px;font-size:.8rem}
 .btn.ghost{border-color:var(--rule)}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 
 .view{padding-block:40px 64px}
-.preview-note{font:500 .7rem/1.4 var(--f-mono);color:var(--muted);border-left:3px solid var(--copper);padding:6px 10px;background:var(--sheet);margin-bottom:22px}
+.preview-note{font:500 .7rem/1.4 var(--f-mono);color:var(--muted);border-left:3px solid var(--accent-fill);padding:6px 10px;background:var(--sheet);margin-bottom:22px}
 
 /* meter readout: USDC has 6 decimals; padding zeros are faint */
 .meter{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -99,7 +99,7 @@ tr.click:hover td{background:var(--paper)}
 .ticket header{display:flex;justify-content:space-between;gap:8px;padding:10px 14px;border-bottom:1px dashed var(--ink)}
 .ticket ol{list-style:none;margin:0;padding:8px 0}
 .ticket li{display:grid;grid-template-columns:5.2rem minmax(0,1fr) auto;gap:10px;padding:5px 14px;align-items:baseline}
-.ticket li b{font-weight:500;color:var(--copper)}
+.ticket li b{font-weight:500;color:var(--accent)}
 .ticket li span:nth-child(2){overflow-wrap:anywhere}
 .ticket footer{border-top:1px dashed var(--ink);padding:10px 14px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .ticket::before,.ticket::after{content:"";position:absolute;top:38px;width:14px;height:14px;border-radius:50%;background:var(--paper);border:1px solid var(--ink)}
@@ -119,7 +119,7 @@ tr.click:hover td{background:var(--paper)}
 .row3 p{color:var(--muted)}
 .steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:s}
 .steps li{counter-increment:s;display:grid;grid-template-columns:2rem minmax(0,1fr);gap:8px;align-items:baseline}
-.steps li::before{content:counter(s,decimal-leading-zero);font:500 .72rem/1 var(--f-mono);color:var(--copper)}
+.steps li::before{content:counter(s,decimal-leading-zero);font:500 .72rem/1 var(--f-mono);color:var(--accent)}
 
 /* APIs page */
 .page-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
@@ -153,14 +153,14 @@ dl.kv dd{margin:0;overflow-wrap:anywhere}
 .toolgrid div{padding:14px 16px;border-bottom:1px solid var(--rule);min-width:0}
 .toolgrid div:nth-child(odd){border-right:1px solid var(--rule)}
 .toolgrid div:nth-last-child(-n+2){border-bottom:0}
-.toolgrid code{color:var(--copper);font-weight:500;font-size:.82rem}
+.toolgrid code{color:var(--accent);font-weight:500;font-size:.82rem}
 .toolgrid p{font-size:.86rem;color:var(--muted);margin-top:4px}
 
 /* console */
 .console{display:grid;grid-template-columns:13rem minmax(0,1fr);gap:32px;align-items:start}
 .rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 72px);display:grid;gap:2px}
 .rail a{display:flex;justify-content:space-between;text-decoration:none;padding:9px 10px;border-radius:var(--r);color:var(--muted);font-size:.92rem}
-.rail a[aria-current="page"]{background:var(--sheet);color:var(--ink);box-shadow:inset 3px 0 0 var(--copper)}
+.rail a[aria-current="page"]{background:var(--sheet);color:var(--ink);box-shadow:inset 3px 0 0 var(--accent-fill)}
 .rail .who{padding:10px;margin-bottom:8px;border-bottom:1px solid var(--rule)}
 .rail .who b{display:block;font-weight:600;font-size:.9rem;overflow-wrap:anywhere}
 .rail .who span{font:400 .66rem/1.4 var(--f-mono);color:var(--muted);overflow-wrap:anywhere}
@@ -170,7 +170,7 @@ dl.kv dd{margin:0;overflow-wrap:anywhere}
 .tiles b{display:block;font:700 1.5rem/1.15 var(--f-mono);letter-spacing:-.03em;margin-top:6px}
 .tiles .sub{margin-top:4px}
 .bar{height:8px;border-radius:999px;background:var(--code);overflow:hidden;margin-top:10px}
-.bar i{display:block;height:100%;background:var(--copper)}
+.bar i{display:block;height:100%;background:var(--accent-fill)}
 .bar.ok i{background:var(--ok)}
 .section{margin-top:28px}
 .section > .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
@@ -196,8 +196,8 @@ dl.kv dd{margin:0;overflow-wrap:anywhere}
 .iconbtn{border:1px solid var(--rule);background:transparent;color:var(--muted);border-radius:var(--r);height:38px;cursor:pointer;font:500 1rem var(--f-mono)}
 .scopes{display:grid;gap:8px}
 .scopes label{display:grid;grid-template-columns:1.2rem minmax(0,1fr);gap:8px;align-items:start;font-size:.9rem}
-.scopes code{color:var(--copper)}
-.secret{display:grid;gap:12px;border:1px solid var(--copper);background:var(--copper-soft);border-radius:var(--r);padding:16px;margin-bottom:22px}
+.scopes code{color:var(--accent)}
+.secret{display:grid;gap:12px;border:1px solid var(--accent-fill);background:var(--accent-soft);border-radius:var(--r);padding:16px;margin-bottom:22px}
 .secret .val{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .secret code{font-size:.82rem;background:var(--sheet);padding:9px 11px;border-radius:var(--r);overflow-wrap:anywhere;flex:1 1 260px}
 
@@ -398,7 +398,7 @@ home(){ return `
       <h1 style="margin-top:14px">Built for agents. Paid one call at a time.</h1>
       <p class="lede">Sign in with Google, top up with a card or crypto, and give your agent a key with an expiry date and daily limits. It finds an API, sees the exact price, pays for one call and gets a receipt.</p>
       <div class="cta">
-        <button class="btn solid" data-go="signin">Get an API key</button>
+        <button class="btn accent" data-go="signin">Get an API key</button>
         <button class="btn" data-go="apis">See every API</button>
       </div>
     </div>
@@ -552,7 +552,7 @@ keys(){ return consoleWrap("keys", `
       <h3>Copy your new key now</h3><p class="sub" style="color:inherit">This is the only time Nen shows it. Store it as NEN_API_KEY where your agent runs.</p>
       <div class="val"><code id="secretval">${state.newSecret}</code><button class="btn small solid" data-copy="secretval">Copy</button><button class="btn small" id="dismiss">I saved it</button></div>
     </div>` : ""}
-  ${state.draft ? keyForm() : `<div class="hd" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><p class="muted">Keys let an agent spend from your balance, within the limits you set on each key.</p><button class="btn solid" id="newkey">Create API key</button></div>`}
+  ${state.draft ? keyForm() : `<div class="hd" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><p class="muted">Keys let an agent spend from your balance, within the limits you set on each key.</p><button class="btn accent" id="newkey">Create API key</button></div>`}
   <div class="tbox"><table style="min-width:820px">
     <thead><tr><th>Key</th><th>Expires</th><th>Daily limit, all APIs</th><th>Per-API limits</th><th>Scopes</th><th>Status</th><th></th></tr></thead>
     <tbody>${state.keys.map((k,i)=>`<tr>
@@ -594,7 +594,7 @@ wallet(){ const t=state.topup, fee=+(t.amount*NEN_FEE).toFixed(2), credit=+(t.am
         <div class="tot"><span>Added to your balance</span><span class="num">${usd2(credit)}</span></div>
       </div>
     </div>
-    <div class="pf"><button class="btn copper" id="pay" ${t.amount>=5?"":"disabled"}>${t.method==="card"?`Continue to payment · ${usd2(t.amount)}`:t.method==="base"?"I've sent it":`Get a NEAR Intents quote`}</button></div>
+    <div class="pf"><button class="btn accent" id="pay" ${t.amount>=5?"":"disabled"}>${t.method==="card"?`Continue to payment · ${usd2(t.amount)}`:t.method==="base"?"I've sent it":`Get a NEAR Intents quote`}</button></div>
   </div>
   <div class="section"><div class="hd"><h3>Top-up history</h3></div>
   <div class="tbox"><table style="min-width:520px"><thead><tr><th>Date</th><th>Activity</th><th class="r">Paid</th><th class="r">Credited</th></tr></thead>
