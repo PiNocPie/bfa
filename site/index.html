@@ -130,6 +130,7 @@ tr.click:hover td{background:var(--paper)}
 .input,select,.search{font:400 .92rem var(--f-body);padding:10px 12px;border:1px solid var(--rule);border-radius:var(--r);background:var(--sheet);color:var(--ink);min-width:0}
 .search{flex:1 1 240px}
 .chip{font:500 .78rem/1 var(--f-body);padding:8px 11px;border-radius:999px;border:1px solid var(--rule);background:transparent;color:var(--muted);cursor:pointer}
+.clients{display:flex;gap:8px;flex-wrap:wrap}
 .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 .api-name{font-weight:600}
 .detail{border:1px solid var(--ink);border-radius:var(--r);background:var(--sheet);margin-top:18px}
@@ -361,6 +362,47 @@ const APIS = [
     input:'{ "from": "…", "to": "…", "amount": "…" }', output:"Not defined yet", sources:"NEAR Intents solver relay", license:"Public quotes",
     review:null, health:"Not listed", bot:null }
 ];
+const GATEWAY = "https://mcp.bfa.example/v1";
+const CLIENTS = [
+  { id:"claude-code", name:"Claude Code", how:"API key", steps:[
+      "Create a key in the console and save it as <span class=\"mono\">BFA_API_KEY</span>.",
+      "Run the command below in your terminal.",
+      "Open Claude Code and ask for data. It calls <span class=\"mono\">discover</span> first." ],
+    code:`claude mcp add --transport http bfa ${"https://mcp.bfa.example/v1"} \\\n  --header "Authorization: Bearer $BFA_API_KEY"` },
+  { id:"claude", name:"Claude & Claude Duet", how:"OAuth", steps:[
+      "In Claude (web or desktop), open <b>Settings → Connectors</b> and choose <b>Add custom connector</b>.",
+      "Name it <span class=\"mono\">BFA</span> and paste the MCP URL.",
+      "Click <b>Connect</b>, sign in to BFA and choose the key whose limits Claude may use." ],
+    code:"https://mcp.bfa.example/v1",
+    note:"Claude Duet uses the apps connected to your Claude account, so it can use BFA once you connect it here. Custom connectors need a Pro, Max, Team or Enterprise plan." },
+  { id:"chatgpt", name:"ChatGPT", how:"OAuth", steps:[
+      "Open <b>Settings → Plugins → Developer Mode</b> and turn Developer Mode on.",
+      "Back on the main page, open <b>Plugins</b> and click <b>+</b> to create one.",
+      "Name it <span class=\"mono\">bfa</span>, paste the MCP URL as the connection URL, then create and connect. Sign in to BFA and pick a key." ],
+    code:"https://mcp.bfa.example/v1",
+    note:"ChatGPT moves these menus often. If yours look different, look for custom connectors or Developer Mode in Settings." },
+  { id:"grok", name:"Grok & Grok Bot", how:"OAuth or API key", steps:[
+      "Grok: go to <b>grok.com/connectors</b>, choose <b>New Connector → Custom</b>, paste the MCP URL and sign in to BFA.",
+      "Grok Bot: add BFA as a remote MCP server and put your key in the server's Authorization header.",
+      "Ask Grok for data. It needs BFA on the public internet, so use the hosted URL, not localhost." ],
+    code:`{ "url": "https://mcp.bfa.example/v1",\n  "headers": { "Authorization": "Bearer <BFA_API_KEY>" } }`,
+    note:"Custom connectors may need a paid Grok plan." },
+  { id:"muse", name:"Muse", how:"API key", steps:[
+      "Muse Code: add BFA to the <span class=\"mono\">mcp_servers</span> block of <span class=\"mono\">~/.config/muse/settings.json</span> (example below).",
+      "Muse app: there is no add-server menu yet. Ask Muse to connect to the BFA MCP URL and store your key in its secure credential store, not in the chat.",
+      "Muse runs in Meta's cloud, so it can reach the hosted URL but not a server on your laptop." ],
+    code:`"mcp_servers": {\n  "bfa": {\n    "url": "https://mcp.bfa.example/v1",\n    "headers": { "Authorization": "Bearer \${BFA_API_KEY}" }\n  }\n}`,
+    note:"Based on community guides; we'll confirm these steps against Meta's docs." },
+  { id:"dot", name:"Dot", how:"to be confirmed", steps:[
+      "We haven't confirmed how Dot adds MCP servers yet.",
+      "If Dot asks for a remote MCP server, use the URL and Authorization header shown under <b>Any MCP client</b>." ],
+    code:"" },
+  { id:"any", name:"Any MCP client", how:"API key", steps:[
+      "Add a remote (Streamable HTTP) MCP server named <span class=\"mono\">bfa</span>.",
+      "Send your key as <span class=\"mono\">Authorization: Bearer &lt;key&gt;</span>.",
+      "Restart the client so it loads the seven BFA tools." ],
+    code:`{\n  "mcpServers": {\n    "bfa": {\n      "type": "http",\n      "url": "https://mcp.bfa.example/v1",\n      "headers": { "Authorization": "Bearer \${BFA_API_KEY}" }\n    }\n  }\n}` }
+];
 const TOOLS = [
   ["discover","free","Search APIs by what you need. Returns price and networks per hit."],
   ["inspect","free","Schemas, example input, price line, review status and manifest hash."],
@@ -390,7 +432,7 @@ const state = {
       perApi:[], scopes:["run"], status:"expired" }
   ],
   activity:[["2026-11-01","Top-up · card","5.00","4.93"],["2026-11-01","Sign-up credit","0.00","0.00"]],
-  apiFilter:"all", apiQuery:"", openApi:"bfa/near-account",
+  client:"claude-code", apiFilter:"all", apiQuery:"", openApi:"bfa/near-account",
   draft:null, newSecret:null,
   topup:{ amount:10, method:"card" }
 };
@@ -500,27 +542,18 @@ apis(){
     <div class="toolgrid">${TOOLS.map(([n,p,d])=>`<div><code>${n}</code> <span class="pill ${p==="paid"?"bad":"plain"}" style="margin-left:6px">${p}</span><p>${d}</p></div>`).join("")}</div>
   </div>`; },
 
-agents(){ const key = state.keys.find(k=>k.status==="active");
+agents(){ const key = state.keys.find(k=>k.status==="active"); const c = CLIENTS.find(x=>x.id===state.client) || CLIENTS[0];
   return `
-  <div class="page-head"><div><p class="label">Connect an agent</p><h1 style="font-size:clamp(1.6rem,3.4vw,2.3rem);margin-top:10px">Paste one config, then ask for data</h1>
-  <p>The agent authenticates with a BFA API key. It never sees your card, your Google account or a wallet key. Create the key in the console, where you set its expiry and limits.</p></div></div>
-  <div class="grid2">
-    <div class="stack">
-      <p class="label">Claude Code</p>
-      <pre id="cfg1">claude mcp add --transport http bfa https://mcp.bfa.dev/v1 \\
-  --header "Authorization: Bearer $BFA_API_KEY"</pre>
-      <p class="label" style="margin-top:8px">Any MCP client (.mcp.json)</p>
-      <pre id="cfg2">{
-  "mcpServers": {
-    "bfa": {
-      "type": "http",
-      "url": "https://mcp.bfa.dev/v1",
-      "headers": { "Authorization": "Bearer \${BFA_API_KEY}" }
-    }
-  }
-}</pre>
-      <div><button class="btn small ghost" data-copy="cfg2">Copy config</button></div>
-      <p class="sub">The hosted URL is a placeholder until the gateway is deployed. Today the server runs locally: see the README.</p>
+  <div class="page-head"><div><p class="label">Connect an agent</p><h1 style="font-size:clamp(1.6rem,3.4vw,2.3rem);margin-top:10px">Pick your agent, paste one thing</h1>
+  <p>Chat apps sign in to BFA with OAuth, and you choose which key and limits they get. Coding agents and bots use an API key. Either way the agent never sees your card, your Google account or a wallet key.</p></div></div>
+  <div class="clients" role="tablist" aria-label="Agent">${CLIENTS.map(x=>`<button role="tab" class="chip" data-client="${x.id}" aria-pressed="${x.id===c.id}" aria-selected="${x.id===c.id}">${esc(x.name)}</button>`).join("")}</div>
+  <div class="grid2" style="margin-top:18px">
+    <div class="stack" role="tabpanel">
+      <p class="label">${esc(c.name)} · ${esc(c.how)}</p>
+      <ol class="steps" style="gap:12px">${c.steps.map(t=>`<li><span>${t}</span></li>`).join("")}</ol>
+      ${c.code ? `<pre id="cfg">${esc(c.code)}</pre><div><button class="btn small ghost" data-copy="cfg">Copy</button></div>` : ""}
+      ${c.note ? `<p class="sub">${c.note}</p>` : ""}
+      <p class="sub">MCP URL <span class="mono">${GATEWAY}</span> is a placeholder until the gateway is deployed. Today the server runs locally: see the README.</p>
     </div>
     <div class="stack">
       <p class="label">Try this prompt</p>
@@ -536,7 +569,7 @@ and don't spend more than $0.01.</pre>
         ${key.perApi.map(([id,t,v])=>`<dt>${id.split("/")[1]}</dt><dd>${t==="calls"?`${v} calls`:usd2(v)} per day</dd>`).join("")}` :
         `<dt>Key</dt><dd>None yet</dd>`}
       </dl>
-      <div><button class="btn solid small" data-go="${state.signedIn?"keys":"signin"}">${state.signedIn?"Manage keys":"Sign in to create a key"}</button></div>
+      <div><button class="btn accent small" data-go="${state.signedIn?"keys":"signin"}">${state.signedIn?"Manage keys":"Sign in to create a key"}</button></div>
     </div>
   </div>`; },
 
@@ -747,6 +780,7 @@ document.addEventListener("click", e => {
   if (t.dataset.go) { e.preventDefault(); if (t.dataset.new) state.draft = newDraft(); go(t.dataset.go); return; }
   if (t.dataset.copy) { const el = document.getElementById(t.dataset.copy); if (el) copy(el.textContent, t); return; }
   if (t.dataset.api) { state.openApi = state.openApi === t.dataset.api ? null : t.dataset.api; render(); return; }
+  if (t.dataset.client) { state.client = t.dataset.client; render(); return; }
   if (t.dataset.filter) { state.apiFilter = t.dataset.filter; render(); return; }
   if (t.id === "google" || t.id === "emailbtn") {
     if (t.id === "emailbtn") { const em = $("#email").value.trim(); if (!/^\S+@\S+\.\S+$/.test(em)) { toast("Enter an email address like you@example.com"); return; } state.email = em; }
