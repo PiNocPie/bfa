@@ -46,7 +46,7 @@ code,pre,.mono{font-family:var(--f-mono);font-size:.8em}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:20;background:var(--paper)}
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--paper);border-bottom:1px solid var(--ink)}
 .top .wrap{display:flex;align-items:center;gap:22px;padding-block:12px;flex-wrap:wrap}
-.brand{display:flex;align-items:baseline;gap:8px;text-decoration:none;font:700 1.15rem/1 var(--f-mono);letter-spacing:-.04em}
+.brand{display:flex;align-items:center;gap:8px;text-decoration:none;font:700 1.15rem/1 var(--f-mono);letter-spacing:-.04em}
 .brand i{font-style:normal;font:500 .62rem/1 var(--f-mono);color:var(--accent);letter-spacing:.06em}
 .navlinks{display:flex;gap:18px;flex-wrap:wrap;font-size:.92rem}
 .navlinks a{text-decoration:none;color:var(--muted);padding-block:4px;border-bottom:2px solid transparent}
@@ -96,6 +96,8 @@ tr.click:hover td{background:var(--paper)}
 .hero .lede{font-size:1.1rem;color:var(--muted);max-width:50ch;margin-top:18px}
 .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
 .ticket{background:var(--sheet);border:1px solid var(--ink);border-radius:2px;position:relative;font:400 .74rem/1.55 var(--f-mono);min-width:0}
+.ticket .perch{position:absolute;right:28px;top:-103px;z-index:2}
+.hero{padding-top:80px}
 .ticket header{display:flex;justify-content:space-between;gap:8px;padding:10px 14px;border-bottom:1px dashed var(--ink)}
 .ticket ol{list-style:none;margin:0;padding:8px 0}
 .ticket li{display:grid;grid-template-columns:5.2rem minmax(0,1fr) auto;gap:10px;padding:5px 14px;align-items:baseline}
@@ -258,9 +260,36 @@ footer.foot .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="nen-sticker" x="-10%" y="-10%" width="120%" height="120%"><feMorphology in="SourceAlpha" operator="dilate" radius="5" result="d"/><feFlood flood-color="#f7f8f4"/><feComposite in2="d" operator="in" result="halo"/><feMerge><feMergeNode in="halo"/><feMergeNode in="SourceGraphic"/></feMerge></filter><symbol id="nen-cat" viewBox="-8 -8 216 216"><g filter="url(#nen-sticker)">
+  <g stroke="#111410" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M150 150 C178 154 190 132 176 116" fill="none" stroke-width="17"/>
+    <path d="M150 150 C178 154 190 132 176 116" fill="none" stroke="#00EC97" stroke-width="8"/>
+    <ellipse cx="76" cy="178" rx="19" ry="11" fill="#00EC97" stroke-width="6"/>
+    <ellipse cx="124" cy="178" rx="19" ry="11" fill="#00EC97" stroke-width="6"/>
+    <path d="M50 92 L56 40 L94 62 Z" fill="#00EC97" stroke-width="6"/>
+    <path d="M150 92 L144 40 L106 62 Z" fill="#00EC97" stroke-width="6"/>
+    <path d="M100 56 C100 42 101 32 104 22" fill="none" stroke-width="6"/>
+    <circle cx="106" cy="16" r="10" fill="#00EC97" stroke-width="6"/>
+    <path d="M100 52 C142 52 166 78 166 118 C166 154 146 178 100 178 C54 178 34 154 34 118 C34 78 58 52 100 52 Z" fill="#00EC97" stroke-width="6"/>
+  </g>
+  <path d="M60 64 L62 48 L76 58 Z" fill="#9ff5d3"/>
+  <path d="M140 64 L138 48 L124 58 Z" fill="#9ff5d3"/>
+  <ellipse cx="100" cy="152" rx="40" ry="22" fill="#c4f8e3"/>
+  <g stroke="#111410" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M40 100 L16 95 M40 108 L14 108 M42 116 L18 122" stroke-width="4"/>
+    <path d="M160 100 L184 95 M160 108 L186 108 M158 116 L182 122" stroke-width="4"/>
+    <path d="M91 108 q4.5 6 9 0 q4.5 6 9 0" stroke-width="4"/>
+  </g>
+  <circle cx="77" cy="98" r="6" fill="#111410"/>
+  <circle cx="123" cy="98" r="6" fill="#111410"/>
+  <path d="M85 114 H115 V142 l-5 4 -5 -4 -5 4 -5 -4 -5 4 -5 -4 Z" fill="#ffffff" stroke="#111410" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M92 122 H108 M92 128 H104 M92 134 H106" stroke="#a9b0a4" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="84" cy="138" rx="9" ry="7.5" fill="#00EC97" stroke="#111410" stroke-width="4"/>
+  <ellipse cx="116" cy="138" rx="9" ry="7.5" fill="#00EC97" stroke="#111410" stroke-width="4"/>
+</g></symbol></defs></svg>
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#home" data-go="home">nen<i>BUILT FOR AGENTS</i></a>
+    <a class="brand" href="#home" data-go="home"><svg class="cat" width="30" height="30" aria-hidden="true"><use href="#nen-cat"/></svg>nen<i>BUILT FOR AGENTS</i></a>
     <nav class="navlinks" aria-label="Main">
       <a href="#apis" data-go="apis">APIs &amp; calls</a>
       <a href="#agents" data-go="agents">Connect an agent</a>
@@ -403,6 +432,7 @@ home(){ return `
       </div>
     </div>
     <figure class="ticket" style="margin:0" aria-label="A real agent session on testnet">
+      <svg class="cat perch" width="118" height="118" aria-hidden="true"><use href="#nen-cat"/></svg>
       <header><span>AGENT SESSION · TESTNET</span><span>2026-11-03 18:14 UTC</span></header>
       <ol>
         <li><b>discover</b><span>"near account balance" → nen/near-account</span><span>free</span></li>
@@ -528,6 +558,7 @@ sell(){ const a = APIS[0]; return `
 
 signin(){ return `
   <div class="signin">
+    <svg class="cat" width="76" height="76" aria-hidden="true" style="justify-self:center"><use href="#nen-cat"/></svg>
     <div><p class="label">Nen console</p><h2 style="margin-top:10px">Sign in</h2><p class="sub" style="margin-top:6px">New here? Signing in creates your account.</p></div>
     <button class="btn solid gbtn" id="google">Continue with Google</button>
     <div class="or">or</div>

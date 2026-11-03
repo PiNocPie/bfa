@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 216 216" role="img" aria-label="Nen mascot: a round green cat holding a receipt">
+<defs><filter id="nen-sticker" x="-10%" y="-10%" width="120%" height="120%"><feMorphology in="SourceAlpha" operator="dilate" radius="5" result="d"/><feFlood flood-color="#f7f8f4"/><feComposite in2="d" operator="in" result="halo"/><feMerge><feMergeNode in="halo"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<g filter="url(#nen-sticker)">
+  <g stroke="#111410" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M150 150 C178 154 190 132 176 116" fill="none" stroke-width="17"/>
+    <path d="M150 150 C178 154 190 132 176 116" fill="none" stroke="#00EC97" stroke-width="8"/>
+    <ellipse cx="76" cy="178" rx="19" ry="11" fill="#00EC97" stroke-width="6"/>
+    <ellipse cx="124" cy="178" rx="19" ry="11" fill="#00EC97" stroke-width="6"/>
+    <path d="M50 92 L56 40 L94 62 Z" fill="#00EC97" stroke-width="6"/>
+    <path d="M150 92 L144 40 L106 62 Z" fill="#00EC97" stroke-width="6"/>
+    <path d="M100 56 C100 42 101 32 104 22" fill="none" stroke-width="6"/>
+    <circle cx="106" cy="16" r="10" fill="#00EC97" stroke-width="6"/>
+    <path d="M100 52 C142 52 166 78 166 118 C166 154 146 178 100 178 C54 178 34 154 34 118 C34 78 58 52 100 52 Z" fill="#00EC97" stroke-width="6"/>
+  </g>
+  <path d="M60 64 L62 48 L76 58 Z" fill="#9ff5d3"/>
+  <path d="M140 64 L138 48 L124 58 Z" fill="#9ff5d3"/>
+  <ellipse cx="100" cy="152" rx="40" ry="22" fill="#c4f8e3"/>
+  <g stroke="#111410" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M40 100 L16 95 M40 108 L14 108 M42 116 L18 122" stroke-width="4"/>
+    <path d="M160 100 L184 95 M160 108 L186 108 M158 116 L182 122" stroke-width="4"/>
+    <path d="M91 108 q4.5 6 9 0 q4.5 6 9 0" stroke-width="4"/>
+  </g>
+  <circle cx="77" cy="98" r="6" fill="#111410"/>
+  <circle cx="123" cy="98" r="6" fill="#111410"/>
+  <path d="M85 114 H115 V142 l-5 4 -5 -4 -5 4 -5 -4 -5 4 -5 -4 Z" fill="#ffffff" stroke="#111410" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M92 122 H108 M92 128 H104 M92 134 H106" stroke="#a9b0a4" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="84" cy="138" rx="9" ry="7.5" fill="#00EC97" stroke="#111410" stroke-width="4"/>
+  <ellipse cx="116" cy="138" rx="9" ry="7.5" fill="#00EC97" stroke="#111410" stroke-width="4"/>
+</g>
+</svg>
