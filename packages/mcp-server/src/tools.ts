@@ -14,6 +14,7 @@ import {
   type Category,
   type Listing,
   type Receipt,
+  type ReceiptStore,
   type RegistryEntry,
 } from "@bfa/core";
 import {
@@ -45,9 +46,36 @@ export interface BfaConfig {
   treasuryId?: string;
   dailyCapUsd: string;
   maxDepositUsd: string;
+  /** Where receipts are kept. Defaults to `<stateDir>/receipts.jsonl`; the hosted gateway may pass a database store. */
+  receiptStore?: ReceiptStore;
   /** Injected for tests. */
   fetchImpl?: typeof fetch;
   signerOverride?: BfaSigner;
+}
+
+/**
+ * Per-call context for the hosted gateway. The stdio server passes none, so its behavior is unchanged.
+ * - `keyId` tags every receipt the call writes, scopes idempotency keys and the receipts/wallet views to that key.
+ * - `allowsListing` drops listings from `run` (query candidates are filtered before a fallback is picked).
+ * - `beforePay` runs before any payment for each listing `run` is about to pay; throw a BfaError to refuse.
+ *   A refusal with next_action "use_fallback" moves on to the next candidate when there is one.
+ */
+export interface CallContext {
+  keyId?: string;
+  allowsListing?: (listingId: string) => boolean;
+  beforePay?: (listing: Listing, info: { fromQuery: boolean; remaining: number }) => Promise<void>;
+}
+
+/** A receipt store seen through one gateway key: receipts it writes are tagged, idempotency is per key. */
+function keyedStore(base: ReceiptStore, keyId: string): ReceiptStore {
+  return {
+    // Tag in place so the receipt callListing returns carries key_id too.
+    append: (r) => base.append(Object.assign(r, { key_id: keyId })),
+    all: (f) => base.all(f),
+    findByIdempotencyKey: (k) => base.findByIdempotencyKey(k, { key_id: keyId }),
+    // The operator's daily cap (dailyCapUsd) stays gateway-wide: every key spends from the same wallet.
+    spentTodayMicros: (now, f) => base.spentTodayMicros(now, f),
+  };
 }
 
 const PAYER_NETWORK = { testnet: NETWORKS.baseSepolia, mainnet: NETWORKS.baseMainnet } as const;
@@ -57,7 +85,7 @@ const USDC = {
 } as const;
 
 export function tools(cfg: BfaConfig) {
-  const log = new ReceiptLog(join(cfg.stateDir, "receipts.jsonl"));
+  const log: ReceiptStore = cfg.receiptStore ?? new ReceiptLog(join(cfg.stateDir, "receipts.jsonl"));
   const payerNetwork = PAYER_NETWORK[cfg.network];
   const ajv = new Ajv2020({ strict: false, allErrors: true });
 
@@ -184,14 +212,29 @@ export function tools(cfg: BfaConfig) {
       input: Record<string, unknown>;
       max_price_usd?: string;
       idempotency_key?: string;
-    }) {
+    }, ctx?: CallContext) {
+      const allows = ctx?.allowsListing;
       let order: string[];
-      if (a.listing_id) order = [a.listing_id];
-      else if (a.query) {
+      if (a.listing_id) {
+        if (allows && !allows(a.listing_id)) {
+          throw new BfaError({ code: "listing_not_allowed", message: `this key may not call ${a.listing_id}`, next_action: "stop" });
+        }
+        order = [a.listing_id];
+      } else if (a.query) {
         const q = await this.quote({ query: a.query, ...(a.max_price_usd && { max_price_usd: a.max_price_usd }) });
-        order = [q.listing_id, ...q.fallbacks];
+        const ranked = [q.listing_id, ...q.fallbacks];
+        order = allows ? ranked.filter((id) => allows(id)) : ranked;
+        if (order.length === 0) {
+          throw new BfaError({
+            code: "listing_not_allowed",
+            message: `no listing for "${a.query}" is allowed for this key (candidates: ${ranked.join(", ")})`,
+            next_action: "stop",
+            details: { candidates: ranked },
+          });
+        }
       } else throw new BfaError({ code: "invalid_input", message: "pass listing_id or query", next_action: "fix_input" });
 
+      const callLog = ctx?.keyId ? keyedStore(log, ctx.keyId) : log;
       const s = await signer();
       const sess = await session();
       const attempts: Receipt[] = [];
@@ -213,15 +256,25 @@ export function tools(cfg: BfaConfig) {
             details: { input_schema: e.listing.endpoint.input_schema, example_input: e.listing.endpoint.example_input },
           });
         }
+        const idempotencyKey = a.idempotency_key && (order.length > 1 ? `${a.idempotency_key}:${id}` : a.idempotency_key);
+        // A replay pays nothing, so it is not subject to the guard.
+        if (ctx?.beforePay && !(idempotencyKey && (await callLog.findByIdempotencyKey(idempotencyKey)))) {
+          try {
+            await ctx.beforePay(e.listing, { fromQuery: !a.listing_id, remaining: order.length - 1 - i });
+          } catch (err) {
+            if (err instanceof BfaError && err.next_action === "use_fallback" && i < order.length - 1) continue;
+            throw err;
+          }
+        }
         const { receipt, data, replayed } = await callListing({
           listing: e.listing,
           input: a.input,
           signer: s,
-          log,
+          log: callLog,
           session: sess,
           dailyCapUsd: cfg.dailyCapUsd,
           ...(a.max_price_usd && { maxPriceUsd: a.max_price_usd }),
-          ...(a.idempotency_key && { idempotencyKey: order.length > 1 ? `${a.idempotency_key}:${id}` : a.idempotency_key }),
+          ...(idempotencyKey && { idempotencyKey }),
           ...(cfg.fetchImpl && { fetchImpl: cfg.fetchImpl }),
         });
         attempts.push(receipt);
@@ -234,16 +287,17 @@ export function tools(cfg: BfaConfig) {
       return { receipt: attempts.at(-1), attempts: attempts.length };
     },
 
-    async receipts(a: { limit?: number }) {
-      const all = await log.all();
+    async receipts(a: { limit?: number }, ctx?: CallContext) {
+      const filter = ctx?.keyId ? { key_id: ctx.keyId } : undefined;
+      const all = await log.all(filter);
       return {
-        spent_today_usd: microsToUsd(await log.spentTodayMicros()),
+        spent_today_usd: microsToUsd(await log.spentTodayMicros(undefined, filter)),
         daily_cap_usd: cfg.dailyCapUsd,
         receipts: all.slice(-(a.limit ?? 20)).reverse(),
       };
     },
 
-    async wallet() {
+    async wallet(ctx?: CallContext) {
       const s = await signer();
       const sess = await session();
       const usdc = USDC[payerNetwork];
@@ -270,7 +324,7 @@ export function tools(cfg: BfaConfig) {
         usdc_balance,
         session_key_address: sess.signer.address,
         limits: { daily_cap_usd: cfg.dailyCapUsd, max_channel_deposit_usd: cfg.maxDepositUsd },
-        spent_today_usd: microsToUsd(await log.spentTodayMicros()),
+        spent_today_usd: microsToUsd(await log.spentTodayMicros(undefined, ctx?.keyId ? { key_id: ctx.keyId } : undefined)),
       };
     },
 
@@ -296,3 +350,5 @@ export function tools(cfg: BfaConfig) {
     },
   };
 }
+
+export type BfaTools = ReturnType<typeof tools>;

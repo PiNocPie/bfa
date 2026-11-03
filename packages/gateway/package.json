@@ -1,0 +1,35 @@
+{
+  "name": "@bfa/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hosted BFA MCP gateway: agents connect over Streamable HTTP with a BFA API key whose limits are enforced before any payment is signed.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "bfa-gateway": "dist/main.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "start": "node dist/main.js",
+    "keys": "node scripts/keys.mjs"
+  },
+  "dependencies": {
+    "@bfa/core": "workspace:*",
+    "@bfa/mcp": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@supabase/supabase-js": "2.118.0",
+    "zod": "4.1.12"
+  },
+  "devDependencies": {
+    "@bfa/x402-client": "workspace:*",
+    "@x402/core": "2.29.0",
+    "viem": "2.57.15"
+  }
+}

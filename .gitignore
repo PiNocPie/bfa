@@ -11,3 +11,4 @@ target/
 .nen/
 .nen-seller/
 .claude/worktrees/
+.bfa-gateway/

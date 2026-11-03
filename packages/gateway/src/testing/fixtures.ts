@@ -1,0 +1,132 @@
+// Test-only helpers (excluded from the build): a fake x402 V2 seller and a temp registry of reviewed listings.
+import { createHash } from "node:crypto";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  decodePaymentSignatureHeader,
+  encodePaymentRequiredHeader,
+  encodePaymentResponseHeader,
+} from "@x402/core/http";
+import type { Listing } from "@bfa/core";
+import { NETWORKS } from "@bfa/x402-client";
+import { getAddress, verifyTypedData, type Hex } from "viem";
+
+// Throwaway test keys. Never fund these.
+export const AGENT_KEY: Hex = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+const SELLER = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
+const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+
+export const REPO = resolve(fileURLToPath(new URL(".", import.meta.url)), "../../../..");
+
+/** Same pattern as packages/x402-client/src/pay.test.ts: 402 + PAYMENT-REQUIRED, then verify EIP-3009 and settle. */
+export function fakeSeller(askAtomic = "1000") {
+  const state = { calls: 0, payments: [] as { url: string; payer: string }[] };
+  const impl: typeof fetch = async (input, init) => {
+    state.calls++;
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+    const sigHeader = headers.get("PAYMENT-SIGNATURE");
+    const requirements = {
+      scheme: "exact",
+      network: NETWORKS.baseSepolia,
+      asset: USDC_BASE_SEPOLIA,
+      amount: askAtomic,
+      payTo: SELLER,
+      maxTimeoutSeconds: 60,
+      extra: { name: "USDC", version: "2" },
+    };
+    if (!sigHeader) {
+      const required = encodePaymentRequiredHeader({
+        x402Version: 2,
+        resource: { url, description: "demo", mimeType: "application/json" },
+        accepts: [requirements],
+      } as never);
+      return new Response(JSON.stringify({}), { status: 402, headers: { "PAYMENT-REQUIRED": required } });
+    }
+    const payment = decodePaymentSignatureHeader(sigHeader) as unknown as {
+      payload: { signature: Hex; authorization: { from: Hex; to: Hex; value: string; validAfter: string; validBefore: string; nonce: Hex } };
+    };
+    const a = payment.payload.authorization;
+    const ok = await verifyTypedData({
+      address: a.from,
+      domain: { name: "USDC", version: "2", chainId: 84532, verifyingContract: USDC_BASE_SEPOLIA },
+      types: {
+        TransferWithAuthorization: [
+          { name: "from", type: "address" },
+          { name: "to", type: "address" },
+          { name: "value", type: "uint256" },
+          { name: "validAfter", type: "uint256" },
+          { name: "validBefore", type: "uint256" },
+          { name: "nonce", type: "bytes32" },
+        ],
+      },
+      primaryType: "TransferWithAuthorization",
+      message: { ...a, value: BigInt(a.value), validAfter: BigInt(a.validAfter), validBefore: BigInt(a.validBefore) },
+      signature: payment.payload.signature,
+    });
+    if (!ok || getAddress(a.to) !== getAddress(SELLER) || a.value !== askAtomic) {
+      return new Response("bad payment", { status: 402 });
+    }
+    state.payments.push({ url, payer: getAddress(a.from) });
+    const settle = encodePaymentResponseHeader({ success: true, transaction: "0xfeed", network: NETWORKS.baseSepolia, payer: a.from } as never);
+    return new Response(JSON.stringify({ account_id: "x.testnet", exists: true }), {
+      status: 200,
+      headers: { "content-type": "application/json", "PAYMENT-RESPONSE": settle },
+    });
+  };
+  const paymentsTo = (host: string) => state.payments.filter((p) => new URL(p.url).host === host).length;
+  return { impl, state, paymentsTo };
+}
+
+function listing(id: string, host: string, price: string): Listing {
+  return {
+    manifest_version: 1,
+    id,
+    provider: { name: `Test seller ${host}`, url: "https://example.com", contact: "ops@example.com" },
+    name: "NEAR account state (test)",
+    description: "Balance and existence of one NEAR account id. Test listing served by a fake x402 seller.",
+    categories: ["near-native"],
+    tags: ["near", "account", "balance"],
+    endpoint: {
+      url: `https://${host}/near/account`,
+      method: "POST",
+      input_schema: { type: "object", required: ["account_id"], properties: { account_id: { type: "string" } } },
+      output_schema: { type: "object", required: ["account_id", "exists"] },
+      example_input: { account_id: "x.testnet" },
+    },
+    pricing: { model: "per_call", amount_usd: price, charges_empty_results: false },
+    payment: { protocol: "x402", schemes: ["exact"], networks: [NETWORKS.baseSepolia], payout: { via: "direct" } },
+    data: { sources: "fake seller in the test suite", license_statement: "Test data generated by the test suite." },
+  };
+}
+
+export const LISTING_A = "test/acct-a";
+export const LISTING_B = "test/acct-b";
+export const HOST_A = "seller-a.test";
+export const HOST_B = "seller-b.test";
+
+/** A dev registry with two interchangeable reviewed listings at $0.001/call. */
+export async function testRegistry(): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), "bfa-gw-reg-"));
+  for (const [id, host] of [
+    [LISTING_A, HOST_A],
+    [LISTING_B, HOST_B],
+  ] as const) {
+    const [provider, slug] = id.split("/") as [string, string];
+    const bytes = JSON.stringify(listing(id, host, "0.001"), null, 2) + "\n";
+    await mkdir(join(dir, "listings", provider), { recursive: true });
+    await mkdir(join(dir, "reviews", provider), { recursive: true });
+    await writeFile(join(dir, "listings", provider, `${slug}.json`), bytes);
+    const review = {
+      id,
+      status: "reviewed",
+      manifest_sha256: createHash("sha256").update(bytes).digest("hex"),
+      reviewer: "test-suite",
+      reviewed_at: "2026-11-01T00:00:00Z",
+    };
+    await writeFile(join(dir, "reviews", provider, `${slug}.json`), JSON.stringify(review));
+  }
+  return dir;
+}
