@@ -225,6 +225,9 @@ dl.kv dd{margin:0;overflow-wrap:anywhere}
 .switch span{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:transform .15s}
 .switch[aria-checked="true"]{background:var(--accent-fill);border-color:var(--accent-fill)}
 .switch[aria-checked="true"] span{transform:translateX(20px);background:var(--on-accent)}
+.picklist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;border:1px solid var(--rule);border-radius:var(--r);padding:12px;background:var(--paper)}
+.picklist label{display:grid;grid-template-columns:1.2rem minmax(0,1fr);gap:8px;align-items:start;font-size:.88rem}
+.spark rect{fill:var(--accent-fill)}
 /* sign in */
 .signin{max-width:420px;margin:24px auto 0;border:1px solid var(--ink);background:var(--sheet);border-radius:var(--r);padding:28px;display:grid;gap:16px}
 .gbtn{justify-content:center;width:100%;padding:13px}
@@ -250,7 +253,7 @@ footer.foot .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:
   .rail .who{display:none}
   .tiles{grid-template-columns:minmax(0,1fr)}
   .tiles > div+div{border-left:0;border-top:1px solid var(--rule)}
-  .methods,.grid3{grid-template-columns:minmax(0,1fr)}
+  .methods,.grid3,.picklist{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:560px){
   .toolgrid{grid-template-columns:minmax(0,1fr)}
@@ -433,14 +436,15 @@ const state = {
   balance:5.00, held:0.05,
   keys:[
     { name:"research-agent", prefix:"bfa_sk_test_7Qd2", created:"2026-11-01", expires:"2026-12-01", daily:"1.00", spent:"0.022",
-      perApi:[["bfa/near-account","calls","200"],["nansen/smart-money-holdings","usd","0.50"]], scopes:["run","receipts"], status:"active" },
+      perApi:[["bfa/near-account","calls","200"],["nansen/smart-money-holdings","usd","0.50"]], scopes:["run","receipts"], access:{mode:"block",ids:["social/x-search"]}, status:"active" },
     { name:"ci-smoke-test", prefix:"bfa_sk_test_k91x", created:"2026-10-20", expires:"2026-10-27", daily:"0.10", spent:"0",
-      perApi:[], scopes:["run"], status:"expired" }
+      perApi:[], scopes:["run"], access:{mode:"allow",ids:["bfa/near-account"]}, status:"expired" }
   ],
   activity:[["2026-11-01","Top-up · card","5.08","5.00"],["2026-11-01","Sign-up credit","0.00","0.00"]],
   client:"claude-code", apiFilter:"all", apiQuery:"", openApi:"bfa/near-account",
   draft:null, newSecret:null,
   topup:{ amount:10, method:"card" },
+  paceDays:30,
   auto:{ on:true, below:"2.00", add:"10.00", monthly:"50.00", source:"card", usedThisMonth:"10.15" }
 };
 
@@ -626,12 +630,13 @@ keys(){ return consoleWrap("keys", `
     </div>` : ""}
   ${state.draft ? keyForm() : `<div class="hd" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><p class="muted">Keys let an agent spend from your balance, within the limits you set on each key.</p><button class="btn accent" id="newkey">Create API key</button></div>`}
   <div class="tbox"><table style="min-width:820px">
-    <thead><tr><th>Key</th><th>Expires</th><th>Daily limit, all APIs</th><th>Per-API limits</th><th>Scopes</th><th>Status</th><th></th></tr></thead>
+    <thead><tr><th>Key</th><th>Expires</th><th>Daily limit, all APIs</th><th>Per-API limits</th><th>APIs it can call</th><th>Scopes</th><th>Status</th><th></th></tr></thead>
     <tbody>${state.keys.map((k,i)=>`<tr>
       <td><b style="font-weight:600">${esc(k.name)}</b><div class="tid">${k.prefix}…</div></td>
       <td class="sub">${k.expires || "never"}</td>
       <td style="min-width:11rem">${meter(k.spent)} <span class="sub">of ${usd2(k.daily)}</span><div class="bar ${k.status==="active"?"":"ok"}"><i style="width:${Math.min(100,Math.max(1,k.spent/k.daily*100))}%"></i></div></td>
       <td class="sub">${k.perApi.length ? k.perApi.map(([id,t,v])=>`${esc(id.split("/")[1])}: ${t==="calls"?v+" calls":usd2(v)}`).join("<br>") : "none"}</td>
+      <td class="sub">${accessText(k.access)}</td>
       <td class="sub mono">${k.scopes.join(", ")}</td>
       <td>${k.status==="active"?'<span class="pill ok">Active</span>':k.status==="expired"?'<span class="pill plain">Expired</span>':'<span class="pill bad">Revoked</span>'}</td>
       <td class="r">${k.status==="active"?`<button class="btn small ghost" data-revoke="${i}">Revoke</button>`:""}</td>
@@ -645,6 +650,7 @@ wallet(){ const t=state.topup, fee=Math.round(t.amount*100*BFA_FEE)/100, total=+
     <div><p class="label">Held</p><b>${usd2(state.held)}</b><p class="sub">Locked in open payment channels. Unused funds return to your balance.</p></div>
     <div><p class="label">Available</p><b>${usd2(state.balance-state.held)}</b><p class="sub">What your keys can spend now</p></div>
   </div>
+  ${paceCard()}
   <div class="panel">
     <div class="ph"><h3>Top up</h3><span class="sub">Minimum $5 · 1.5% fee</span></div>
     <div class="pb">
@@ -683,6 +689,35 @@ usage(){ return consoleWrap("usage", `
   <p class="sub" style="margin-top:12px">Rows with a transaction are payment-channel deposits, signed by NEAR Chain Signatures. Other calls are vouchers against that deposit.</p>`); }
 };
 
+
+function accessText(a){ if (!a || a.mode==="all") return "All reviewed APIs";
+  const names = a.ids.map(id=>`<span class="mono">${esc(id.split("/")[1])}</span>`).join(", ");
+  return a.mode==="allow" ? `Only ${names}` : `All except ${names}`; }
+function pace(){ // sample: spend per day over the last 7 days, all keys
+  const days=[0.22,0.41,0.18,0.35,0.29,0.47,0.26], avg=days.reduce((x,y)=>x+y,0)/days.length;
+  const avail=state.balance-state.held, lasts=avail/avg, horizon=state.paceDays;
+  const need=Math.max(0, avg*horizon-avail), suggest=need>0 ? Math.max(5, Math.ceil(need)) : 0;
+  return { days, avg, avail, lasts, horizon, need, suggest }; }
+function paceCard(){ const p=pace(), max=Math.max(...p.days);
+  const spark=p.days.map((v,i)=>`<rect x="${i*14}" y="${36-v/max*32}" width="9" height="${v/max*32}" rx="2"/>`).join("");
+  return `<div class="panel pace">
+    <div class="ph"><div><h3>At your current pace</h3><p class="sub" style="margin-top:2px">Based on the last 7 days of spending across all keys (sample data)</p></div>
+      <svg width="98" height="38" viewBox="0 0 98 38" aria-label="Spending per day, last 7 days" role="img" class="spark">${spark}</svg></div>
+    <div class="pb">
+      <div class="statline" style="border:1px solid var(--rule);border-radius:var(--r)">
+        <div><b>${usd2(p.avg)}</b><span>average per day</span></div>
+        <div><b>${usd2(p.avail)}</b><span>available now</span></div>
+        <div><b>~${Math.floor(p.lasts)} days</b><span>until it runs out</span></div>
+        <div><b>${p.suggest ? usd2(p.suggest) : "Nothing"}</b><span>to deposit for ${p.horizon} days</span></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <span class="sub">Cover the next</span>
+        <div class="seg">${[7,30,90].map(d=>`<button data-pdays="${d}" aria-pressed="${p.horizon===d}">${d} days</button>`).join("")}</div>
+        ${p.suggest ? `<button class="btn small accent" data-suggest="${p.suggest}">Top up ${usd2(p.suggest)} · pay ${usd2(p.suggest*(1+BFA_FEE))}</button>` : `<span class="sub">Your balance already covers it.</span>`}
+      </div>
+      <p class="sub">Estimate only: ${usd2(p.avg)} a day × ${p.horizon} days = ${usd2(p.avg*p.horizon)}, minus ${usd2(p.avail)} available${p.suggest ? (p.need < 5 ? ", raised to the $5 minimum" : ", rounded up to whole dollars") : ""}. Real spend depends on what your agents call.</p>
+    </div>
+  </div>`; }
 
 function autoPanel(){ const a=state.auto, add=parseFloat(a.add)||0, fee=Math.round(add*100*BFA_FEE)/100, pay=(add+fee);
   return `<div class="panel" id="autopanel">
@@ -786,6 +821,11 @@ function keyForm(){ const d=state.draft; const apiOpts = APIS.filter(a=>a.state=
         </div>
         <small>A per-API limit can't raise the daily limit above. Whichever is reached first stops the call.</small>
       </div>
+      <div class="field"><span>APIs this key can call</span>
+        <div class="seg">${[["all","All reviewed APIs"],["allow","Only these (allowlist)"],["block","All except these (blocklist)"]].map(([v,l])=>`<button data-amode="${v}" aria-pressed="${d.access.mode===v}">${l}</button>`).join("")}</div>
+        ${d.access.mode==="all" ? `<small>New APIs become callable as soon as they pass review.</small>` : `<div class="picklist">${APIS.map(a=>`<label><input type="checkbox" data-aid="${a.id}" ${d.access.ids.includes(a.id)?"checked":""}><span><span class="mono">${a.id}</span> <span class="sub">${a.state==="live"?"live":a.state==="review"?"in review":"planned"}</span></span></label>`).join("")}</div>
+        <small>${d.access.mode==="allow" ? "The key can call only the APIs you tick. Anything else fails with listing_not_allowed and is never paid." : "The key can call every reviewed API except the ones you tick, including APIs added later."}</small>`}
+      </div>
       <div class="field"><span>What this key can do</span>
         <div class="scopes">
           <label><input type="checkbox" data-scope="run" ${d.scopes.includes("run")?"checked":""}><span><code>run</code> · pay for API calls within the limits above</span></label>
@@ -826,6 +866,7 @@ document.addEventListener("click", e => {
   if (t.id === "newkey") { state.draft = newDraft(); state.newSecret = null; render(); return; }
   if (t.id === "cancelkey") { state.draft = null; render(); return; }
   if (t.dataset.exp) { syncDraft(); state.draft.exp = t.dataset.exp; render(); return; }
+  if (t.dataset.amode) { syncDraft(); state.draft.access.mode = t.dataset.amode; render(); return; }
   if (t.id === "addlimit") { syncDraft(); state.draft.perApi.push(["bfa/near-account","calls","100"]); render(); return; }
   if (t.dataset.ldel) { syncDraft(); state.draft.perApi.splice(+t.dataset.ldel,1); render(); return; }
   if (t.id === "createkey") { createKey(); return; }
@@ -833,6 +874,8 @@ document.addEventListener("click", e => {
   if (t.dataset.revoke) { const k = state.keys[+t.dataset.revoke]; k.status = "revoked"; render(); toast(`Revoked ${k.name}. Calls with it now fail with key_revoked.`); return; }
   if (t.dataset.amt) { state.topup.amount = +t.dataset.amt; render(); return; }
   if (t.dataset.method) { state.topup.method = t.dataset.method; render(); return; }
+  if (t.dataset.pdays) { state.paceDays = +t.dataset.pdays; render(); return; }
+  if (t.dataset.suggest) { state.topup.amount = +t.dataset.suggest; render(); document.getElementById("pay")?.scrollIntoView({block:"center"}); toast(`Top-up set to ${usd2(+t.dataset.suggest)}`); return; }
   if (t.id === "autotoggle") { syncAuto(); state.auto.on = !state.auto.on; render(); toast(state.auto.on ? "Auto top-up is on" : "Auto top-up is off"); return; }
   if (t.dataset.asrc) { syncAuto(); state.auto.source = t.dataset.asrc; render(); return; }
   if (t.id === "autosave") { if (syncAuto(true)) { render(); toast("Auto top-up saved (preview)"); } return; }
@@ -844,11 +887,12 @@ document.addEventListener("input", e => {
   if (e.target.id === "amt") { const v = parseFloat(e.target.value); if (!isNaN(v)) { state.topup.amount = Math.round(v*100)/100; const pos=e.target.selectionStart; render(); const a=$("#amt"); a.focus(); a.setSelectionRange(pos,pos); } }
 });
 
-function newDraft(){ return { name:"", exp:"30", date:addDays(30), daily:"1.00", perApi:[["nansen/smart-money-holdings","usd","0.50"]], scopes:["run","receipts"] }; }
+function newDraft(){ return { name:"", exp:"30", date:addDays(30), daily:"1.00", perApi:[["nansen/smart-money-holdings","usd","0.50"]], scopes:["run","receipts"], access:{mode:"all",ids:[]} }; }
 function syncDraft(){ const d = state.draft; if (!d || !$("#keyform")) return;
   d.name = $("#kname").value; d.daily = $("#kdaily").value; if ($("#kdate")) d.date = $("#kdate").value;
   d.perApi = d.perApi.map((_,i)=>[document.querySelector(`[data-lapi="${i}"]`).value, document.querySelector(`[data-ltype="${i}"]`).value, document.querySelector(`[data-lval="${i}"]`).value]);
-  d.scopes = [...document.querySelectorAll("[data-scope]")].filter(c=>c.checked).map(c=>c.dataset.scope); }
+  d.scopes = [...document.querySelectorAll("[data-scope]")].filter(c=>c.checked).map(c=>c.dataset.scope);
+  if (document.querySelector("[data-aid]")) d.access.ids = [...document.querySelectorAll("[data-aid]")].filter(c=>c.checked).map(c=>c.dataset.aid); }
 function createKey(){ syncDraft(); const d = state.draft, err = $("#kerr");
   const daily = parseFloat(d.daily);
   if (!d.name.trim()) { err.textContent = "Give the key a name."; $("#kname").focus(); return; }
@@ -856,10 +900,11 @@ function createKey(){ syncDraft(); const d = state.draft, err = $("#kerr");
   if (d.exp === "custom" && !d.date) { err.textContent = "Pick an expiry date."; return; }
   const bad = d.perApi.find(([,,v]) => !(parseFloat(v) > 0)); if (bad) { err.textContent = `Set a limit above 0 for ${bad[0]}, or remove that row.`; return; }
   const over = d.perApi.find(([,t,v]) => t==="usd" && parseFloat(v) > daily); if (over) { err.textContent = `${over[0]} is limited to more than the daily limit for all APIs.`; return; }
+  if (d.access.mode !== "all" && !d.access.ids.length) { err.textContent = d.access.mode==="allow" ? "Tick at least one API for the allowlist, or choose All reviewed APIs." : "Tick at least one API to block, or choose All reviewed APIs."; return; }
   if (!d.scopes.includes("run")) { err.textContent = "Without run, the agent can't pay for any call."; }
   const secret = randKey();
   state.keys.unshift({ name:d.name.trim(), prefix:secret.slice(0,16), created:addDays(0), expires:d.exp==="custom"?d.date:addDays(+d.exp),
-    daily:daily.toFixed(2), spent:"0", perApi:d.perApi.map(([id,t,v])=>[id,t,t==="usd"?(+v).toFixed(2):String(parseInt(v))]), scopes:d.scopes, status:"active" });
+    daily:daily.toFixed(2), spent:"0", perApi:d.perApi.map(([id,t,v])=>[id,t,t==="usd"?(+v).toFixed(2):String(parseInt(v))]), scopes:d.scopes, access:{mode:d.access.mode, ids:[...d.access.ids]}, status:"active" });
   state.newSecret = secret; state.draft = null; render(); window.scrollTo(0,0);
 }
 render();
