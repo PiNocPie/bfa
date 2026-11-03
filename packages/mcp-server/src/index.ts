@@ -21,6 +21,7 @@ const config: BfaConfig = {
   ...(env.NEAR_PRIVATE_KEY && { nearPrivateKey: env.NEAR_PRIVATE_KEY }),
   ...(env.NEAR_RPC_URLS && { nearRpcUrls: env.NEAR_RPC_URLS.split(",").map((u) => u.trim()).filter(Boolean) }),
   agentPath: env.BFA_AGENT_PATH ?? "nen/agent-1",
+  ...(env.BFA_TREASURY_ID && { treasuryId: env.BFA_TREASURY_ID }),
   dailyCapUsd: env.BFA_DAILY_CAP_USD ?? "1",
   maxDepositUsd: env.BFA_MAX_DEPOSIT_USD ?? "0.50",
 };

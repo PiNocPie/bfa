@@ -1,0 +1,25 @@
+[package]
+name = "bfa-treasury"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "BFA treasury: on-chain spending policy for agent wallets controlled by NEAR Chain Signatures"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = "=5.17.2"
+hex = "=0.4.3"
+
+[dev-dependencies]
+near-sdk = { version = "=5.17.2", features = ["unit-testing"] }
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

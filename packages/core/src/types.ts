@@ -129,7 +129,8 @@ export type BfaErrorCode =
   | "payment_failed"
   | "payment_required_unparseable"
   | "signer_unavailable"
-  | "top_up_needed";
+  | "top_up_needed"
+  | "treasury_refused";
 
 /** Every error tells the agent what to do next. */
 export interface BfaErrorShape {

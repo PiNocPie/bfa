@@ -220,6 +220,15 @@ export async function callListing(opts: CallOptions): Promise<CallResult> {
   try {
     res = await paying.fetch(url, init);
   } catch (e) {
+    // The treasury contract refused on policy (daily limit, recipient, token, paused): stop, don't fall back.
+    const refusal = /treasury refused: ([a-z_]+)/.exec(String((e as Error)?.message ?? e));
+    if (refusal) {
+      return finish({
+        status: "unpaid_error",
+        price_usd: "0",
+        error: { code: "treasury_refused", message: `the on-chain vault policy refused this payment: ${refusal[1]}`, next_action: "stop", details: { reason: refusal[1] } },
+      });
+    }
     return finish({
       status: "unpaid_error",
       price_usd: "0",

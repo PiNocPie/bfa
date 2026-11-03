@@ -4,7 +4,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 export type BfaSigner = ClientEvmSigner & {
   /** Human-readable description for receipts and logs, never a secret. */
-  readonly kind: "local-key" | "near-chain-signatures";
+  readonly kind: "local-key" | "near-chain-signatures" | "near-treasury";
 };
 
 /** Dev/test only: a plain EVM private key held by the process. Production agents should use Chain Signatures. */

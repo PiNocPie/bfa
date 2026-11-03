@@ -23,6 +23,7 @@ import {
   loadOrCreateSessionSigner,
   nearAccount,
   nearMpc,
+  treasurySigner,
   probeListing,
   type BfaSigner,
   type SessionConfig,
@@ -40,6 +41,8 @@ export interface BfaConfig {
   nearPrivateKey?: string;
   nearRpcUrls?: string[];
   agentPath: string;
+  /** BFA treasury contract. When set, payments are signed by the user's vault under its on-chain policy. */
+  treasuryId?: string;
   dailyCapUsd: string;
   maxDepositUsd: string;
   /** Injected for tests. */
@@ -84,19 +87,19 @@ export function tools(cfg: BfaConfig) {
         }),
       );
     }
-    signerP ??= chainSignaturesSigner({
-      mpc: nearMpc({
-        networkId: cfg.network,
-        caller: nearAccount({
-          accountId: cfg.nearAccountId,
-          privateKey: cfg.nearPrivateKey,
-          networkId: cfg.network,
-          ...(cfg.nearRpcUrls && { rpcUrls: cfg.nearRpcUrls }),
-        }),
-      }),
-      predecessor: cfg.nearAccountId,
-      path: cfg.agentPath,
+    const caller = nearAccount({
+      accountId: cfg.nearAccountId,
+      privateKey: cfg.nearPrivateKey,
+      networkId: cfg.network,
+      ...(cfg.nearRpcUrls && { rpcUrls: cfg.nearRpcUrls }),
     });
+    signerP ??= cfg.treasuryId
+      ? treasurySigner({ caller, treasuryId: cfg.treasuryId, networkId: cfg.network })
+      : chainSignaturesSigner({
+          mpc: nearMpc({ networkId: cfg.network, caller }),
+          predecessor: cfg.nearAccountId,
+          path: cfg.agentPath,
+        });
     return signerP;
   }
 
@@ -255,9 +258,14 @@ export function tools(cfg: BfaConfig) {
       return {
         near_account: cfg.nearAccountId ?? null,
         near_network: cfg.network,
-        derivation_path: cfg.agentPath,
+        derivation_path: cfg.treasuryId ? `vault/${cfg.nearAccountId}` : cfg.agentPath,
         payer_address: s.address,
-        payer_address_controlled_by: s.kind === "near-chain-signatures" ? `NEAR Chain Signatures (${cfg.nearAccountId})` : s.kind,
+        payer_address_controlled_by:
+          s.kind === "near-treasury"
+            ? `BFA treasury ${cfg.treasuryId} vault of ${cfg.nearAccountId} (NEAR Chain Signatures, on-chain daily limit)`
+            : s.kind === "near-chain-signatures"
+              ? `NEAR Chain Signatures (${cfg.nearAccountId})`
+              : s.kind,
         payer_network: payerNetwork,
         usdc_balance,
         session_key_address: sess.signer.address,
