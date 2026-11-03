@@ -17,11 +17,15 @@ export interface Listing {
   pricing: { model: "per_call"; amount_usd: string; charges_empty_results?: boolean };
   payment: {
     protocol: "x402";
+    /** Defaults to ["exact"]. "batch-settlement" = fast path (see listing.schema.json). */
+    schemes?: X402Scheme[];
     networks: string[];
     payout: { via: "direct" } | { via: "near-intents"; chain: string; token: string; recipient: string };
   };
   data: { sources: string; license_statement: string; terms_url?: string };
 }
+
+export type X402Scheme = "exact" | "batch-settlement";
 
 export type Category =
   | "onchain-data"
@@ -96,6 +100,8 @@ export interface Receipt {
   endpoint_url: string;
   status: ReceiptStatus;
   price_usd: string;
+  /** x402 scheme used: exact (one onchain transfer per call) or batch-settlement (voucher against a channel deposit). */
+  scheme?: X402Scheme;
   /** CAIP-2 network the payment settled on, when paid. */
   network?: string;
   /** Settlement transaction hash reported by the seller/facilitator, when available. */

@@ -1,0 +1,22 @@
+{
+  "name": "@nen-near/demo-seller",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nen's demo x402 seller on Base Sepolia: NEAR-native endpoints sold per call (exact + batch-settlement).",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/server.js",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@hono/node-server": "1.19.6",
+    "@x402/core": "2.29.0",
+    "@x402/evm": "2.29.0",
+    "@x402/hono": "2.29.0",
+    "hono": "4.10.6",
+    "viem": "2.57.15"
+  }
+}

@@ -1,5 +1,7 @@
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { ExactEvmScheme } from "@x402/evm";
+import { BatchSettlementEvmScheme } from "@x402/evm/batch-settlement/client";
+import { FileClientChannelStorage } from "@x402/evm/batch-settlement/client/file-storage";
 import { decodePaymentResponseHeader, wrapFetchWithPayment, x402Client } from "@x402/fetch";
 import {
   NenError,
@@ -10,7 +12,9 @@ import {
   usdToMicros,
   type Listing,
   type Receipt,
+  type X402Scheme,
 } from "@nen-near/core";
+import type { SessionConfig } from "./session.js";
 import type { NenSigner } from "./signers.js";
 
 /** CAIP-2 ids. Testnet first: Base Sepolia is where Nen's demo seller and test agents run. */
@@ -27,6 +31,8 @@ export interface CallOptions {
   maxPriceUsd?: string;
   /** Agent's daily ceiling across all providers, enforced from the receipt log. */
   dailyCapUsd?: string;
+  /** Enables the batch-settlement fast path (one MPC-signed deposit, then per-call session-key vouchers). */
+  session?: SessionConfig;
   /** Injected for tests. */
   fetchImpl?: typeof fetch;
 }
@@ -62,19 +68,73 @@ function isEmpty(body: unknown): boolean {
   return false;
 }
 
+const DEFAULT_MAX_DEPOSIT_USD = "0.50";
+
+/** Preference order when a seller offers several schemes: the fast path first. */
+const SCHEME_RANK: Record<string, number> = { "batch-settlement": 0, exact: 1 };
+
 /**
- * Build a fetch that pays x402 V2 challenges with `signer`, but only on the listing's declared networks
- * and never above the listed price: a seller cannot raise the price between review and call.
+ * Build a fetch that pays x402 V2 challenges, but only on the listing's declared networks and never above the
+ * listed price per call: a seller cannot raise the price between review and call.
+ *
+ * Without `session`: every call is an `exact` EIP-3009 transfer signed by `signer` (Chain Signatures: ~25s).
+ * With `session`: if the seller offers `batch-settlement`, `signer` signs only the channel deposit (capped at
+ * `maxDepositUsd`) and the session key signs each call's voucher locally (milliseconds). Falls back to `exact`.
  */
-export function payingFetch(listing: Listing, signer: NenSigner, fetchImpl: typeof fetch = fetch): typeof fetch {
+export function payingFetch(
+  listing: Listing,
+  signer: NenSigner,
+  fetchImpl: typeof fetch = fetch,
+  session?: SessionConfig,
+): typeof fetch {
+  return buildPayingFetch(listing, signer, fetchImpl, session).fetch;
+}
+
+function buildPayingFetch(
+  listing: Listing,
+  signer: NenSigner,
+  fetchImpl: typeof fetch,
+  session: SessionConfig | undefined,
+): { fetch: typeof fetch; usedScheme: () => X402Scheme | undefined } {
+  let used: X402Scheme | undefined;
   const maxAtomic = usdToMicros(listing.pricing.amount_usd); // USDC has 6 decimals: atomic units == micro-USD
-  const scheme = new ExactEvmScheme(signer);
+  const exact = new ExactEvmScheme(signer);
   const client = new x402Client();
-  for (const network of listing.payment.networks) client.register(network as `${string}:${string}`, scheme);
+  const accepted = listing.payment.schemes ?? ["exact"];
+  let batch: BatchSettlementEvmScheme | undefined;
+  if (session && accepted.includes("batch-settlement")) {
+    const capAtomic = usdToMicros(session.maxDepositUsd ?? DEFAULT_MAX_DEPOSIT_USD);
+    batch = new BatchSettlementEvmScheme(signer, {
+      voucherSigner: session.signer,
+      payerAuthorizer: session.signer.address,
+      storage: new FileClientChannelStorage({ directory: session.channelDir }),
+      depositStrategy: ({ depositAmount, minimumDepositAmount }) => {
+        const min = BigInt(minimumDepositAmount);
+        if (min > capAtomic) return false; // seller demands a bigger deposit than the agent allows
+        const want = BigInt(depositAmount);
+        return (want > capAtomic ? capAtomic : want < min ? min : want).toString();
+      },
+    });
+  }
+  for (const network of listing.payment.networks) {
+    client.register(network as `${string}:${string}`, exact);
+    if (batch) client.register(network as `${string}:${string}`, batch);
+  }
   client.registerPolicy((_version, reqs) =>
-    reqs.filter((r) => listing.payment.networks.includes(r.network) && BigInt(r.amount) <= maxAtomic),
+    reqs
+      .filter(
+        (r) =>
+          listing.payment.networks.includes(r.network) &&
+          accepted.includes(r.scheme as never) &&
+          (r.scheme !== "batch-settlement" || batch !== undefined) &&
+          BigInt(r.amount) <= maxAtomic,
+      )
+      .sort((a, b) => (SCHEME_RANK[a.scheme] ?? 9) - (SCHEME_RANK[b.scheme] ?? 9)),
   );
-  return wrapFetchWithPayment(fetchImpl, client) as typeof fetch;
+  client.onAfterPaymentCreation(async (ctx) => {
+    used = ctx.selectedRequirements.scheme as X402Scheme;
+  });
+  return { fetch: wrapFetchWithPayment(fetchImpl, client) as typeof fetch, usedScheme: () => used };
 }
 
 function buildRequest(listing: Listing, input: Record<string, unknown>): { url: string; init: RequestInit } {
@@ -106,7 +166,7 @@ function readSettlement(res: Response): { tx?: string; network?: string; payer?:
 }
 
 type Outcome = Pick<Receipt, "status" | "price_usd"> &
-  Partial<Pick<Receipt, "network" | "payment_tx" | "http_status" | "output_valid" | "error">>;
+  Partial<Pick<Receipt, "scheme" | "network" | "payment_tx" | "http_status" | "output_valid" | "error">>;
 
 /** Call one listing, pay per call over x402, and always write exactly one receipt. */
 export async function callListing(opts: CallOptions): Promise<CallResult> {
@@ -145,9 +205,10 @@ export async function callListing(opts: CallOptions): Promise<CallResult> {
   };
 
   const { url, init } = buildRequest(listing, opts.input);
+  const paying = buildPayingFetch(listing, opts.signer, opts.fetchImpl ?? fetch, opts.session);
   let res: Response;
   try {
-    res = await payingFetch(listing, opts.signer, opts.fetchImpl)(url, init);
+    res = await paying.fetch(url, init);
   } catch (e) {
     return finish({
       status: "unpaid_error",
@@ -158,7 +219,14 @@ export async function callListing(opts: CallOptions): Promise<CallResult> {
 
   const settled = readSettlement(res);
   const price_usd = settled ? listing.pricing.amount_usd : "0";
-  const paidFields = settled ? { ...(settled.tx && { payment_tx: settled.tx }), ...(settled.network && { network: settled.network }) } : {};
+  const scheme = paying.usedScheme();
+  const paidFields = settled
+    ? {
+        ...(scheme && { scheme }),
+        ...(settled.tx && { payment_tx: settled.tx }),
+        ...(settled.network && { network: settled.network }),
+      }
+    : {};
 
   if (res.status === 429) {
     const retry = Number(res.headers.get("retry-after") ?? "1");

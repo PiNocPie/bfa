@@ -12,7 +12,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "chainsig:testnet": "NODE_USE_ENV_PROXY=1 node scripts/chainsig-testnet.mjs",
+    "e2e:testnet": "NODE_USE_ENV_PROXY=1 node scripts/e2e-testnet.mjs"
   },
   "dependencies": {
     "@nen-near/core": "workspace:*",
