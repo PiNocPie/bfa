@@ -1,0 +1,42 @@
+{
+  "$schema": "../../schema/listing.schema.json",
+  "manifest_version": 1,
+  "id": "nansen/smart-money-holdings",
+  "provider": {
+    "name": "Nansen",
+    "url": "https://www.nansen.ai",
+    "contact": "https://docs.nansen.ai"
+  },
+  "name": "Nansen Smart Money holdings",
+  "description": "Current token holdings of wallets Nansen labels as Smart Money, filtered by chain. Public x402 endpoint indexed by the Nen community; payment goes directly to Nansen. Smart Money tier, $0.05 per call. Rate limit 5 req/s and 60 req/min per paying wallet.",
+  "categories": ["onchain-data", "market-data"],
+  "tags": ["smart-money", "holdings", "nansen", "wallets"],
+  "endpoint": {
+    "url": "https://api.nansen.ai/api/v1/smart-money/holdings",
+    "method": "POST",
+    "input_schema": {
+      "type": "object",
+      "required": ["chains"],
+      "properties": {
+        "chains": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+      }
+    },
+    "output_schema": { "type": "object" },
+    "example_input": { "chains": ["ethereum"] }
+  },
+  "pricing": {
+    "model": "per_call",
+    "amount_usd": "0.05",
+    "charges_empty_results": false
+  },
+  "payment": {
+    "protocol": "x402",
+    "networks": ["eip155:8453"],
+    "payout": { "via": "direct" }
+  },
+  "data": {
+    "sources": "Nansen's own labelled onchain dataset, sold by Nansen over its public x402 API.",
+    "license_statement": "Nen only indexes the endpoint; the agent pays Nansen directly and Nansen's API terms apply. Nen does not resell the data.",
+    "terms_url": "https://docs.nansen.ai/getting-started/agentic-payments/x402-payments"
+  }
+}

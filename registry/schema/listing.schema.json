@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nen-near/nen/registry/schema/listing.schema.json",
+  "title": "Nen listing manifest (nen.json)",
+  "description": "One API endpoint offered to AI agents on Nen. Submitted by the seller, auto-checked by the listing bot, then reviewed by the Nen team. Review status is NOT part of this file; it lives in registry/reviews/<id>.json and is written only by reviewers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifest_version", "id", "provider", "name", "description", "categories", "endpoint", "pricing", "payment", "data"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "manifest_version": { "const": 1 },
+    "id": {
+      "description": "Globally unique id: <provider-slug>/<endpoint-slug>.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,38}/[a-z0-9][a-z0-9-]{1,62}$"
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "url", "contact"],
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "contact": { "type": "string", "minLength": 3, "maxLength": 160, "description": "Email, X handle or GitHub handle for the review team." }
+      }
+    },
+    "name": { "type": "string", "minLength": 3, "maxLength": 80 },
+    "description": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 600,
+      "description": "What the endpoint returns, written for an agent deciding whether to call it. No marketing."
+    },
+    "categories": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "enum": ["onchain-data", "market-data", "social", "web", "company", "ai-inference", "near-native", "other"] }
+    },
+    "tags": {
+      "type": "array",
+      "maxItems": 12,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,31}$" }
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "method", "input_schema", "output_schema", "example_input"],
+      "properties": {
+        "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "method": { "enum": ["GET", "POST"] },
+        "input_schema": { "type": "object", "description": "JSON Schema for the request (query params for GET, JSON body for POST)." },
+        "output_schema": { "type": "object", "description": "JSON Schema the response body must satisfy." },
+        "example_input": { "type": "object", "description": "Used by the listing bot for the paid test call." }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "amount_usd"],
+      "properties": {
+        "model": { "const": "per_call", "description": "Nen is pay-as-you-go only: no subscriptions, no prepaid credits." },
+        "amount_usd": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)(\\.[0-9]{1,6})?$",
+          "description": "Price per call in USD, as a decimal string. Must match the amount in the endpoint's HTTP 402 response."
+        },
+        "charges_empty_results": {
+          "type": "boolean",
+          "default": false,
+          "description": "Declare true if a call that returns no data is still charged. Agents rank such listings lower."
+        }
+      }
+    },
+    "payment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "networks", "payout"],
+      "properties": {
+        "protocol": { "enum": ["x402"] },
+        "networks": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "CAIP-2 network ids the endpoint accepts payment on, e.g. eip155:8453 for Base mainnet.",
+          "items": { "type": "string", "pattern": "^[a-z0-9-]{3,8}:[-_a-zA-Z0-9]{1,32}$" }
+        },
+        "payout": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["via"],
+          "properties": {
+            "via": {
+              "enum": ["direct", "near-intents"],
+              "description": "direct: payTo is the seller's own address. near-intents: payTo is a single-use 1Click deposit address and the seller is paid in the chain/token below."
+            },
+            "chain": { "type": "string", "description": "Seller's payout chain when via=near-intents, e.g. near, base, sol, tron." },
+            "token": { "type": "string", "description": "Seller's payout token when via=near-intents, e.g. USDC, USDT." },
+            "recipient": { "type": "string", "description": "Seller's payout address or NEAR account when via=near-intents." }
+          },
+          "if": { "properties": { "via": { "const": "near-intents" } } },
+          "then": { "required": ["via", "chain", "token", "recipient"] }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sources", "license_statement"],
+      "properties": {
+        "sources": { "type": "string", "minLength": 5, "maxLength": 400, "description": "Where the data comes from (own index, licensed feed, public chain data...)." },
+        "license_statement": { "type": "string", "minLength": 10, "maxLength": 400, "description": "Why the seller is allowed to sell this data. Reviewers reject listings that resell data against its source's terms." },
+        "terms_url": { "type": "string", "format": "uri" }
+      }
+    }
+  }
+}

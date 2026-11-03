@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nen-near/nen/registry/schema/review.schema.json",
+  "title": "Nen review record",
+  "description": "Written only by the Nen review team (enforced by CODEOWNERS on registry/reviews/). A listing is routable only when its review status is reviewed or verified-provider AND manifest_sha256 matches the current manifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "status", "manifest_sha256", "reviewer", "reviewed_at"],
+  "properties": {
+    "id": { "type": "string" },
+    "status": { "enum": ["pending", "reviewed", "verified-provider", "suspended", "rejected"] },
+    "manifest_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "reviewer": { "type": "string", "minLength": 2 },
+    "reviewed_at": { "type": "string", "format": "date-time" },
+    "notes": { "type": "string", "maxLength": 2000 },
+    "bot_report_url": { "type": "string", "format": "uri" }
+  }
+}
