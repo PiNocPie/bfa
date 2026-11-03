@@ -115,6 +115,8 @@ export interface Receipt {
   /** Time spent creating the payment (deposit via NEAR MPC, or a local voucher), separate from the seller's work. */
   sign_ms?: number;
   started_at: string;
+  /** Gateway API key that made the call (hosted gateway only; absent for the local stdio server). */
+  key_id?: string;
   error?: BfaErrorShape;
 }
 
@@ -129,7 +131,13 @@ export type BfaErrorCode =
   | "payment_failed"
   | "payment_required_unparseable"
   | "signer_unavailable"
-  | "top_up_needed";
+  | "top_up_needed"
+  | "unauthorized"
+  | "key_revoked"
+  | "key_expired"
+  | "scope_missing"
+  | "listing_not_allowed"
+  | "limit_reached";
 
 /** Every error tells the agent what to do next. */
 export interface BfaErrorShape {
@@ -137,6 +145,8 @@ export interface BfaErrorShape {
   message: string;
   next_action: "retry" | "retry_after" | "use_fallback" | "raise_max_price" | "top_up" | "fix_input" | "stop";
   retry_after_s?: number;
+  /** ISO time when a spend limit resets (next 00:00 UTC), set on limit_reached. */
+  resets_at?: string;
   fallback_listing_id?: string;
   details?: Record<string, unknown>;
 }

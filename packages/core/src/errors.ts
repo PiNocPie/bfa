@@ -4,6 +4,7 @@ export class BfaError extends Error implements BfaErrorShape {
   readonly code: BfaErrorCode;
   readonly next_action: BfaErrorShape["next_action"];
   readonly retry_after_s?: number;
+  readonly resets_at?: string;
   readonly fallback_listing_id?: string;
   readonly details?: Record<string, unknown>;
 
@@ -13,6 +14,7 @@ export class BfaError extends Error implements BfaErrorShape {
     this.code = shape.code;
     this.next_action = shape.next_action;
     this.retry_after_s = shape.retry_after_s;
+    this.resets_at = shape.resets_at;
     this.fallback_listing_id = shape.fallback_listing_id;
     this.details = shape.details;
   }
@@ -23,6 +25,7 @@ export class BfaError extends Error implements BfaErrorShape {
       message: this.message,
       next_action: this.next_action,
       ...(this.retry_after_s !== undefined && { retry_after_s: this.retry_after_s }),
+      ...(this.resets_at !== undefined && { resets_at: this.resets_at }),
       ...(this.fallback_listing_id !== undefined && { fallback_listing_id: this.fallback_listing_id }),
       ...(this.details !== undefined && { details: this.details }),
     };

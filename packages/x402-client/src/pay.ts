@@ -5,13 +5,13 @@ import { FileClientChannelStorage } from "@x402/evm/batch-settlement/client/file
 import { decodePaymentResponseHeader, wrapFetchWithPayment, x402Client } from "@x402/fetch";
 import {
   BfaError,
-  ReceiptLog,
   assertWithinDailyBudget,
   newReceiptId,
   toErrorShape,
   usdToMicros,
   type Listing,
   type Receipt,
+  type ReceiptStore,
   type X402Scheme,
 } from "@bfa/core";
 import type { SessionConfig } from "./session.js";
@@ -24,7 +24,7 @@ export interface CallOptions {
   listing: Listing;
   input: Record<string, unknown>;
   signer: BfaSigner;
-  log: ReceiptLog;
+  log: ReceiptStore;
   /** Same key → same receipt, never a second payment. Defaults to a random key (no dedupe). */
   idempotencyKey?: string;
   /** Agent's per-call ceiling. The call is refused before any request if the listing costs more. */
