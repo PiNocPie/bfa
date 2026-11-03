@@ -3,4 +3,5 @@ export * from "./errors.js";
 export * from "./money.js";
 export * from "./registry.js";
 export * from "./router.js";
+export * from "./health.js";
 export * from "./receipts.js";

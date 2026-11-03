@@ -36,14 +36,14 @@ async function listJsonFiles(dir: string): Promise<string[]> {
   return names.filter((n) => n.endsWith(".json")).map((n) => join(dir, n)).sort();
 }
 
-export async function makeValidators(registryDir: string): Promise<{
+export async function makeValidators(schemaDir: string): Promise<{
   listing: ValidateFunction;
   review: ValidateFunction;
 }> {
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   addFormats(ajv);
-  const listingSchema = JSON.parse(await readFile(join(registryDir, "schema", "listing.schema.json"), "utf8"));
-  const reviewSchema = JSON.parse(await readFile(join(registryDir, "schema", "review.schema.json"), "utf8"));
+  const listingSchema = JSON.parse(await readFile(join(schemaDir, "listing.schema.json"), "utf8"));
+  const reviewSchema = JSON.parse(await readFile(join(schemaDir, "review.schema.json"), "utf8"));
   return { listing: ajv.compile(listingSchema), review: ajv.compile(reviewSchema) };
 }
 
@@ -60,8 +60,8 @@ export function idFromPath(listingsDir: string, file: string): string {
  * Load every listing and review from a registry directory.
  * Invalid files are reported in `problems` and skipped, never thrown, so one bad PR cannot take the market down.
  */
-export async function loadRegistry(registryDir: string): Promise<LoadedRegistry> {
-  const validators = await makeValidators(registryDir);
+export async function loadRegistry(registryDir: string, schemaDir = join(registryDir, "schema")): Promise<LoadedRegistry> {
+  const validators = await makeValidators(schemaDir);
   const listingsDir = join(registryDir, "listings");
   const reviewsDir = join(registryDir, "reviews");
   const problems: RegistryProblem[] = [];

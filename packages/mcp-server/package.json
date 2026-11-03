@@ -1,0 +1,24 @@
+{
+  "name": "@nen-near/mcp",
+  "version": "0.1.0",
+  "description": "Nen MCP server: AI agents discover, quote and pay for APIs per call over x402, signed by their NEAR account via Chain Signatures. No private key in config.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "nen-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@nen-near/core": "workspace:*",
+    "@nen-near/x402-client": "workspace:*",
+    "ajv": "8.17.1",
+    "viem": "2.57.15",
+    "zod": "4.1.12"
+  }
+}

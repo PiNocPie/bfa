@@ -1,0 +1,8 @@
+{
+  "id": "nen/near-account",
+  "status": "reviewed",
+  "manifest_sha256": "7b787028863654a22db6cfefeb233346d7ebdb38074ac8edd94d4491fd7deff0",
+  "reviewer": "nen-team",
+  "reviewed_at": "2026-11-03T05:40:00Z",
+  "notes": "Nen's own demo endpoint for local development. Bot checks pass except public_https (localhost by design); not eligible for the public registry."
+}

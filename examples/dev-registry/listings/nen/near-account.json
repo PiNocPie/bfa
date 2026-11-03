@@ -1,0 +1,46 @@
+{
+  "manifest_version": 1,
+  "id": "nen/near-account",
+  "provider": {
+    "name": "Nen demo seller",
+    "url": "https://github.com/PiNocPie/nen",
+    "contact": "github:PiNocPie"
+  },
+  "name": "NEAR testnet account state",
+  "description": "Balance, locked balance, storage bytes and contract flag for one NEAR testnet account id. Served by packages/demo-seller on localhost; $0.001 per call on Base Sepolia.",
+  "categories": ["near-native"],
+  "tags": ["near", "account", "balance", "testnet"],
+  "endpoint": {
+    "url": "http://localhost:8402/near/account",
+    "method": "POST",
+    "input_schema": {
+      "type": "object",
+      "required": ["account_id"],
+      "properties": { "account_id": { "type": "string", "pattern": "^[a-z0-9._-]{2,64}$" } },
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "required": ["account_id", "exists"],
+      "properties": {
+        "account_id": { "type": "string" },
+        "exists": { "type": "boolean" },
+        "balance_yocto": { "type": "string" },
+        "storage_bytes": { "type": "integer" },
+        "has_contract": { "type": "boolean" }
+      }
+    },
+    "example_input": { "account_id": "nen-testnet.testnet" }
+  },
+  "pricing": { "model": "per_call", "amount_usd": "0.001", "charges_empty_results": false },
+  "payment": {
+    "protocol": "x402",
+    "schemes": ["batch-settlement", "exact"],
+    "networks": ["eip155:84532"],
+    "payout": { "via": "direct" }
+  },
+  "data": {
+    "sources": "NEAR testnet RPC (FastNEAR, falling back to rpc.testnet.near.org).",
+    "license_statement": "Public NEAR chain data, served by Nen's own demo seller."
+  }
+}

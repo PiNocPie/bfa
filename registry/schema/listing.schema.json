@@ -108,7 +108,8 @@
         "url": {
           "type": "string",
           "format": "uri",
-          "pattern": "^https://"
+          "pattern": "^(https://|http://(localhost|127\\.0\\.0\\.1)(:[0-9]{1,5})?/)",
+          "description": "Public listings must be https. http://localhost is accepted only for local development registries; reviewers reject it."
         },
         "method": {
           "enum": [
