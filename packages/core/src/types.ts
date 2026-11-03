@@ -80,7 +80,11 @@ export interface Quote {
   fallbacks: string[];
 }
 
-export type ReceiptStatus = "paid_ok" | "paid_empty" | "paid_error" | "unpaid_error" | "dry_run";
+/**
+ * paid_ok / paid_empty / paid_error: an x402 payment settled (empty = no data came back, error = bad response after paying).
+ * free_ok: the endpoint answered without asking for payment. unpaid_error: failed before any payment settled.
+ */
+export type ReceiptStatus = "paid_ok" | "paid_empty" | "paid_error" | "free_ok" | "unpaid_error" | "dry_run";
 
 /** One machine-readable receipt per call. Agents should store these; Nen appends them to a JSONL log. */
 export interface Receipt {
@@ -98,6 +102,8 @@ export interface Receipt {
   payment_tx?: string;
   payer?: string;
   http_status?: number;
+  /** Whether the response body matched the listing's output_schema. Feeds provider reputation. */
+  output_valid?: boolean;
   latency_ms: number;
   started_at: string;
   error?: NenErrorShape;
