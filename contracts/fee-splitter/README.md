@@ -68,3 +68,21 @@ DEPLOYER_PRIVATE_KEY=0x... FEE_RECIPIENT=0x... pnpm --filter @bfa/fee-splitter d
 - The script reads `token()` and `feeRecipient()` back from the new factory and prints its address.
 
 Changing `FEE_RECIPIENT` means deploying a new factory. That changes every customer's top-up address, so the website must always show addresses from the factory it actually uses.
+
+## Live on Base Sepolia
+
+Deployed on 2026-11-03 with no EVM private key: the deployer address is derived from the NEAR account `nen-testnet.testnet` (path `bfa/deployer`) and every transaction was signed by NEAR Chain Signatures (`DEPLOYER_NEAR_ACCOUNT=nen-testnet.testnet node scripts/deploy.mjs`). Its gas ETH was bridged from Ethereum Sepolia the same way (`packages/x402-client/scripts/bridge-sepolia-to-base.mjs`, [tx](https://sepolia.etherscan.io/tx/0xe0e0e9b0049b652608924933a2224c4286b72baaddf954e24adaad81fa8260fc)).
+
+| | |
+|---|---|
+| Factory | [`0xd0fd9f5a17cdc84873a836c4c2971b2ae941340f`](https://sepolia.basescan.org/address/0xd0fd9f5a17cdc84873a836c4c2971b2ae941340f) ([deploy tx](https://sepolia.basescan.org/tx/0xb8089368b2cedff8629316878305b498601bdf771e5431b2a3a8153b7a3ec9df)) |
+| Fee recipient | `0x2016B49D1FF2619Da9782ba3b6d779790693a22A` (NEAR-derived, path `bfa/fees`; testnet only) |
+| Example customer wallet | the treasury vault `0x4752…82C6` of `nen-testnet.testnet` |
+| Its top-up address | `0x10736D4Cb5faA16C174999316B7A472E65E24d8d` |
+| Live top-up | 1.015 USDC sent → [sweep](https://sepolia.basescan.org/tx/0xacc5b1c5c078d85293be34d1fdef0cbfeac1dad544c1a26e52295399c161244f) → **1.000 USDC to the wallet, 0.015 USDC to BFA** |
+
+Sweep anyone's top-up address with:
+
+```bash
+WALLET=0x... FACTORY=0xd0fd9f5a17cdc84873a836c4c2971b2ae941340f DEPLOYER_NEAR_ACCOUNT=nen-testnet.testnet node scripts/sweep.mjs
+```

@@ -1,6 +1,9 @@
 // Deploy BfaTopUpFactory to Base Sepolia.
 //
 //   DEPLOYER_PRIVATE_KEY=0x... FEE_RECIPIENT=0x... node scripts/deploy.mjs
+// or, with no EVM key at all (the deployer address is derived from a NEAR account and every
+// transaction is signed by NEAR Chain Signatures):
+//   DEPLOYER_NEAR_ACCOUNT=nen-testnet.testnet DEPLOYER_PATH=bfa/deployer FEE_RECIPIENT=0x... node scripts/deploy.mjs
 //
 // DEPLOYER_PRIVATE_KEY is read from the environment only. It is never written anywhere.
 // The deployer needs a little Base Sepolia ETH for gas. The factory has no owner, so the deployer
@@ -11,6 +14,7 @@ import { createPublicClient, createWalletClient, encodeDeployData, formatEther, 
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { compileContracts, solcVersion } from "./compile.mjs";
+import { nearDeployer } from "./near-signer.mjs";
 
 const CHAIN_ID = 84532;
 const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
@@ -21,17 +25,22 @@ function fail(msg) {
   process.exit(1);
 }
 
-const rawKey = process.env.DEPLOYER_PRIVATE_KEY;
-if (!rawKey) fail("set DEPLOYER_PRIVATE_KEY (0x-prefixed 32-byte hex) in the environment");
-const key = rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`;
-if (!/^0x[0-9a-fA-F]{64}$/.test(key)) fail("DEPLOYER_PRIVATE_KEY must be 32 bytes of hex");
+let account;
+if (process.env.DEPLOYER_NEAR_ACCOUNT) {
+  account = await nearDeployer(process.env.DEPLOYER_NEAR_ACCOUNT, process.env.DEPLOYER_PATH ?? "bfa/deployer");
+} else {
+  const rawKey = process.env.DEPLOYER_PRIVATE_KEY;
+  if (!rawKey) fail("set DEPLOYER_PRIVATE_KEY (0x-prefixed 32-byte hex), or DEPLOYER_NEAR_ACCOUNT to sign with NEAR Chain Signatures");
+  const key = rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`;
+  if (!/^0x[0-9a-fA-F]{64}$/.test(key)) fail("DEPLOYER_PRIVATE_KEY must be 32 bytes of hex");
+  account = privateKeyToAccount(key);
+}
 
 const feeRecipientRaw = process.env.FEE_RECIPIENT;
 if (!feeRecipientRaw || !isAddress(feeRecipientRaw)) fail("set FEE_RECIPIENT to the 0x address that receives BFA's fee");
 const feeRecipient = getAddress(feeRecipientRaw);
 if (feeRecipient === zeroAddress) fail("FEE_RECIPIENT must not be the zero address");
 
-const account = privateKeyToAccount(key);
 const transport = http(RPC_URL);
 const publicClient = createPublicClient({ chain: baseSepolia, transport });
 const walletClient = createWalletClient({ account, chain: baseSepolia, transport });
