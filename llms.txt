@@ -1,0 +1,25 @@
+# Nen
+
+> Open pay-per-call API market for AI agents. Agents discover, quote and pay for one API call at a time over x402 V2 (USDC on Base), signed by their NEAR account via Chain Signatures. There is no EVM private key in config. Listings are open to anyone through a PR, and they route only after peer review pinned to the manifest's sha256. Status: works on testnet (NEAR testnet + Base Sepolia). Not on mainnet yet.
+
+Quick verification without accounts: `pnpm install && pnpm build && pnpm test && pnpm registry:check`. The README lists live testnet transactions and labels which parts are real and which are not done yet.
+
+## Docs
+
+- [README](README.md): what it does, offline test steps, the live testnet run with tx hashes, MCP config, the listing flow, what is real and what is not
+- [Listing schema](registry/schema/listing.schema.json): the nen.json manifest a seller submits
+- [Review schema](registry/schema/review.schema.json): the review record that makes a listing routable
+
+## Code
+
+- [MCP tools](packages/mcp-server/src/tools.ts): discover, inspect, quote, run, receipts, wallet, submit_listing
+- [Paying client](packages/x402-client/src/pay.ts): x402 V2 payment, price ceiling, receipts, batch-settlement session
+- [Chain Signatures signer](packages/x402-client/src/near-mpc.ts): derives the Base address and signs through the MPC contract v1.signer-prod.testnet / v1.signer
+- [Registry and routing](packages/core/src/registry.ts): validation and review gating; [router](packages/core/src/router.ts) handles ranking
+- [Listing bot](packages/x402-client/src/bot.ts): unpaid probe of a seller's 402 challenge
+- [Demo seller](packages/demo-seller/src/server.ts): x402 seller for a NEAR-native endpoint
+
+## Optional
+
+- [Competitor UX research](docs/research/competitor-ux.md)
+- [MCP smoke test](packages/mcp-server/scripts/smoke.mjs): runs every tool against the live testnet

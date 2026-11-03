@@ -13,7 +13,7 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "registry:check": "pnpm --filter @nen-near/listing-bot check"
+    "registry:check": "node scripts/check-registry.mjs && node scripts/check-registry.mjs examples/dev-registry registry/schema"
   },
   "devDependencies": {
     "typescript": "5.9.3",
