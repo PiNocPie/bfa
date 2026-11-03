@@ -1,5 +1,5 @@
 import { decodePaymentRequiredHeader } from "@x402/core/http";
-import { usdToMicros, type Listing } from "@nen-near/core";
+import { usdToMicros, type Listing } from "@bfa/core";
 
 export interface BotCheck {
   id: string;

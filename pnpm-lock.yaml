@@ -53,15 +53,15 @@ importers:
 
   packages/mcp-server:
     dependencies:
+      '@bfa/core':
+        specifier: workspace:*
+        version: link:../core
+      '@bfa/x402-client':
+        specifier: workspace:*
+        version: link:../x402-client
       '@modelcontextprotocol/sdk':
         specifier: 1.32.2
         version: 1.32.2(zod@4.1.12)
-      '@nen-near/core':
-        specifier: workspace:*
-        version: link:../core
-      '@nen-near/x402-client':
-        specifier: workspace:*
-        version: link:../x402-client
       ajv:
         specifier: 8.17.1
         version: 8.17.1
@@ -74,7 +74,7 @@ importers:
 
   packages/x402-client:
     dependencies:
-      '@nen-near/core':
+      '@bfa/core':
         specifier: workspace:*
         version: link:../core
       '@x402/core':

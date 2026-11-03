@@ -1,8 +1,8 @@
 {
   "manifest_version": 1,
-  "id": "nen/near-account",
+  "id": "bfa/near-account",
   "provider": {
-    "name": "Nen demo seller",
+    "name": "BFA demo seller",
     "url": "https://github.com/PiNocPie/nen",
     "contact": "github:PiNocPie"
   },
@@ -41,6 +41,6 @@
   },
   "data": {
     "sources": "NEAR testnet RPC (FastNEAR, falling back to rpc.testnet.near.org).",
-    "license_statement": "Public NEAR chain data, served by Nen's own demo seller."
+    "license_statement": "Public NEAR chain data, served by BFA's own demo seller."
   }
 }

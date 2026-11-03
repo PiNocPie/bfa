@@ -1,0 +1,8 @@
+{
+  "id": "bfa/near-account",
+  "status": "reviewed",
+  "manifest_sha256": "9e513eae095469b67f05e913247d566ae4b0dde26e12f4598e06fe3142c49fb0",
+  "reviewer": "bfa-team",
+  "reviewed_at": "2026-11-03T05:40:00Z",
+  "notes": "BFA's own demo endpoint for local development. Bot checks pass except public_https (localhost by design); not eligible for the public registry."
+}

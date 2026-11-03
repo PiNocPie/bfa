@@ -1,4 +1,4 @@
-# Nen
+# BFA
 
 > Open pay-per-call API market for AI agents. Agents discover, quote and pay for one API call at a time over x402 V2 (USDC on Base), signed by their NEAR account via Chain Signatures. There is no EVM private key in config. Listings are open to anyone through a PR, and they route only after peer review pinned to the manifest's sha256. Status: works on testnet (NEAR testnet + Base Sepolia). Not on mainnet yet.
 
@@ -7,7 +7,7 @@ Quick verification without accounts: `pnpm install && pnpm build && pnpm test &&
 ## Docs
 
 - [README](README.md): what it does, offline test steps, the live testnet run with tx hashes, MCP config, the listing flow, what is real and what is not
-- [Listing schema](registry/schema/listing.schema.json): the nen.json manifest a seller submits
+- [Listing schema](registry/schema/listing.schema.json): the bfa.json manifest a seller submits
 - [Review schema](registry/schema/review.schema.json): the review record that makes a listing routable
 
 ## Code

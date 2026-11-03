@@ -2,13 +2,13 @@ import type { ClientEvmSigner } from "@x402/evm";
 import { hashTypedData, type Hex, type TypedDataDefinition } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-export type NenSigner = ClientEvmSigner & {
+export type BfaSigner = ClientEvmSigner & {
   /** Human-readable description for receipts and logs, never a secret. */
   readonly kind: "local-key" | "near-chain-signatures";
 };
 
 /** Dev/test only: a plain EVM private key held by the process. Production agents should use Chain Signatures. */
-export function localKeySigner(privateKey: Hex): NenSigner {
+export function localKeySigner(privateKey: Hex): BfaSigner {
   const account = privateKeyToAccount(privateKey);
   return {
     kind: "local-key",
@@ -25,9 +25,9 @@ export interface RsvSignature {
 }
 
 /**
- * The two MPC operations Nen needs. Implemented with chainsig.js in `nearMpc()`; swappable in tests.
+ * The two MPC operations BFA needs. Implemented with chainsig.js in `nearMpc()`; swappable in tests.
  * `predecessor` is the NEAR account that calls the MPC contract: today the agent's own account,
- * later the Nen treasury contract (so spend policy is enforced onchain before any signature exists).
+ * later the BFA treasury contract (so spend policy is enforced onchain before any signature exists).
  */
 export interface MpcBackend {
   deriveEvmAddress(predecessor: string, path: string): Promise<Hex>;
@@ -49,7 +49,7 @@ export function rsvToHex(sig: RsvSignature): Hex {
 
 export interface ChainSignaturesSignerOptions {
   mpc: MpcBackend;
-  /** NEAR account that requests signatures (agent account or Nen treasury contract). */
+  /** NEAR account that requests signatures (agent account or BFA treasury contract). */
   predecessor: string;
   /** Derivation path; one path per agent wallet, e.g. "nen/agent-1". */
   path: string;
@@ -59,7 +59,7 @@ export interface ChainSignaturesSignerOptions {
  * An x402 signer whose EVM key is never held by anyone: the address is derived from a NEAR account
  * via Chain Signatures, and each EIP-3009 authorization is signed by NEAR's MPC network.
  */
-export async function chainSignaturesSigner(opts: ChainSignaturesSignerOptions): Promise<NenSigner> {
+export async function chainSignaturesSigner(opts: ChainSignaturesSignerOptions): Promise<BfaSigner> {
   const address = await opts.mpc.deriveEvmAddress(opts.predecessor, opts.path);
   return {
     kind: "near-chain-signatures",

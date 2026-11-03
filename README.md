@@ -1,8 +1,8 @@
-# Nen
+# BFA (Built For Agents)
 
-Nen is an open, pay-per-call API market for AI agents. An agent finds an API, checks the price, pays for one call over [x402](https://x402.org) and gets a JSON receipt. It does this through an MCP server, so it needs no account, subscription or API key.
+BFA is an open, pay-per-call API market for AI agents. An agent finds an API, checks the price, pays for one call over [x402](https://x402.org) and gets a JSON receipt. It does this through an MCP server, so it needs no account, subscription or API key.
 
-The agent pays from a Base address that its **NEAR account controls through [Chain Signatures](https://docs.near.org/chain-abstraction/chain-signatures)**. No private EVM key appears in any config file. Anyone can list an API by opening a PR. A listing starts routing only after the Nen team reviews it, and it stops routing if its manifest changes after review.
+The agent pays from a Base address that its **NEAR account controls through [Chain Signatures](https://docs.near.org/chain-abstraction/chain-signatures)**. No private EVM key appears in any config file. Anyone can list an API by opening a PR. A listing starts routing only after the BFA team reviews it, and it stops routing if its manifest changes after review.
 
 Status: working on testnets (NEAR testnet + Base Sepolia). Not on mainnet yet. The [what is real](#what-is-real-and-what-is-not) section lists what works and what doesn't.
 
@@ -32,7 +32,7 @@ You should see `Tests 8 passed` (core) and `Tests 7 passed` (x402-client). The x
 pnpm registry:check
 ```
 
-You should see `nansen/smart-money-holdings ... not routable (pending review by the Nen team)` and `nen/near-account ... routable`. Each line shows whether a listing is routable and why.
+You should see `nansen/smart-money-holdings ... not routable (pending review by the BFA team)` and `bfa/near-account ... routable`. Each line shows whether a listing is routable and why.
 
 ## Live testnet run (needs a NEAR testnet account)
 
@@ -42,7 +42,7 @@ This is the path we ran on 2026-11-03. Every number below comes from that run.
 2. **Derive the agent's Base address from the NEAR account:**
 
    ```bash
-   NEAR_ACCOUNT_ID=<name>.testnet pnpm --filter @nen-near/x402-client chainsig:testnet
+   NEAR_ACCOUNT_ID=<name>.testnet pnpm --filter @bfa/x402-client chainsig:testnet
    ```
 
    This sends one `sign` request to the MPC contract `v1.signer-prod.testnet`, then checks the signature locally. It prints the derived address for path `nen/agent-1`.
@@ -50,13 +50,13 @@ This is the path we ran on 2026-11-03. Every number below comes from that run.
 4. **Start the demo seller.** It sells `POST /near/account` for $0.001 per call and accepts `batch-settlement` and `exact`:
 
    ```bash
-   SELLER_PAY_TO=<any 0x address you control> pnpm --filter @nen-near/demo-seller start
+   SELLER_PAY_TO=<any 0x address you control> pnpm --filter @bfa/demo-seller start
    ```
 
 5. **Pay from a script:**
 
    ```bash
-   NEAR_ACCOUNT_ID=<name>.testnet pnpm --filter @nen-near/x402-client e2e:testnet
+   NEAR_ACCOUNT_ID=<name>.testnet pnpm --filter @bfa/x402-client e2e:testnet
    ```
 
    Call 1 opens a payment channel. Chain Signatures signs the deposit once. Calls 2 onward are vouchers signed by a local session key.
@@ -87,22 +87,22 @@ After `pnpm build`, add this to your MCP config (for example `.mcp.json`):
 ```json
 {
   "mcpServers": {
-    "nen": {
+    "bfa": {
       "command": "node",
-      "args": ["/absolute/path/to/nen/packages/mcp-server/dist/index.js"],
+      "args": ["/absolute/path/to/bfa/packages/mcp-server/dist/index.js"],
       "env": {
         "NEAR_NETWORK": "testnet",
         "NEAR_ACCOUNT_ID": "<name>.testnet",
         "NEAR_PRIVATE_KEY": "${NEAR_PRIVATE_KEY}",
-        "NEN_DEV_REGISTRY_DIR": "/absolute/path/to/nen/examples/dev-registry",
-        "NEN_DAILY_CAP_USD": "1"
+        "BFA_DEV_REGISTRY_DIR": "/absolute/path/to/bfa/examples/dev-registry",
+        "BFA_DAILY_CAP_USD": "1"
       }
     }
   }
 }
 ```
 
-Keep `NEAR_PRIVATE_KEY` in your environment or a secret store, not in the file. This key is the NEAR access key that signs `sign` requests. It is not an EVM key. `NEN_DEV_REGISTRY_DIR` adds the localhost demo seller listing. Leave it out to use only the public registry.
+Keep `NEAR_PRIVATE_KEY` in your environment or a secret store, not in the file. This key is the NEAR access key that signs `sign` requests. It is not an EVM key. `BFA_DEV_REGISTRY_DIR` adds the localhost demo seller listing. Leave it out to use only the public registry.
 
 ### Tools
 
@@ -128,9 +128,9 @@ Errors are JSON with a `code` and a `next_action` (`retry`, `retry_after`, `use_
    - its networks and schemes match the manifest;
    - its price equals `pricing.amount_usd`;
    - the URL is public https.
-4. A Nen reviewer adds `registry/reviews/<provider>/<slug>.json` with the manifest's sha256. Only then does the listing route. Editing the manifest afterwards stops routing until someone reviews it again.
+4. A BFA reviewer adds `registry/reviews/<provider>/<slug>.json` with the manifest's sha256. Only then does the listing route. Editing the manifest afterwards stops routing until someone reviews it again.
 
-Listing is free. Nen takes no fee and does not hold your money: agents pay your `payTo` directly.
+Listing is free and BFA takes no cut of call payments: agents pay your `payTo` directly. (BFA's only fee is 1.5% on user top-ups, planned and not built yet.)
 
 ## Repo map
 

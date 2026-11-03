@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   InMemoryHealth,
-  NenError,
+  BfaError,
   ReceiptLog,
   assertWithinDailyBudget,
   discover,
@@ -43,7 +43,7 @@ function listing(id: string, price: string, overrides: Partial<Listing> = {}): L
 }
 
 async function tempRegistry(items: { l: Listing; review?: "reviewed" | "suspended" | "stale" }[]): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), "nen-reg-"));
+  const dir = await mkdtemp(join(tmpdir(), "bfa-reg-"));
   await cp(join(REPO_REGISTRY, "schema"), join(dir, "schema"), { recursive: true });
   for (const { l, review } of items) {
     const [prov, slug] = l.id.split("/") as [string, string];
@@ -58,7 +58,7 @@ async function tempRegistry(items: { l: Listing; review?: "reviewed" | "suspende
           id: l.id,
           status: review === "stale" ? "reviewed" : review,
           manifest_sha256: review === "stale" ? "0".repeat(64) : sha256(bytes),
-          reviewer: "nen-team",
+          reviewer: "bfa-team",
           reviewed_at: "2026-11-03T00:00:00Z",
         }),
       );
@@ -158,13 +158,13 @@ describe("router", () => {
     expect(() => quote(entries, health, { payerNetworks: ["eip155:137"] })).toThrowError(
       expect.objectContaining({ code: "no_matching_listing", next_action: "top_up" }),
     );
-    expect(() => quote([], health)).toThrowError(NenError);
+    expect(() => quote([], health)).toThrowError(BfaError);
   });
 });
 
 describe("receipts and daily budget", () => {
   it("counts only charged calls from today against the cap", async () => {
-    const path = join(await mkdtemp(join(tmpdir(), "nen-rcpt-")), "receipts.jsonl");
+    const path = join(await mkdtemp(join(tmpdir(), "bfa-rcpt-")), "receipts.jsonl");
     const log = new ReceiptLog(path);
     const base: Omit<Receipt, "receipt_id" | "status" | "price_usd" | "idempotency_key"> = {
       receipt_version: 1,

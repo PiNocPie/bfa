@@ -11,7 +11,7 @@ const SIGN_GAS = 300_000_000_000_000n;
 const SIGN_DEPOSIT = 1n;
 
 /**
- * The one NEAR capability Nen needs: call a contract method as `accountId`.
+ * The one NEAR capability BFA needs: call a contract method as `accountId`.
  * A near-api-js `Account` satisfies this directly.
  */
 export interface NearCaller {

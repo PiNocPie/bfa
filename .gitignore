@@ -6,5 +6,7 @@ dist/
 *.log
 coverage/
 target/
-.nen-seller/
+.bfa-seller/
+.bfa/
 .nen/
+.nen-seller/

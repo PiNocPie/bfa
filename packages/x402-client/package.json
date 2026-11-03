@@ -1,5 +1,5 @@
 {
-  "name": "@nen-near/x402-client",
+  "name": "@bfa/x402-client",
   "version": "0.1.0",
   "description": "Pay x402 V2 endpoints from an agent wallet. Pluggable signer: local key for tests, NEAR Chain Signatures in production.",
   "license": "MIT",
@@ -17,7 +17,7 @@
     "e2e:testnet": "NODE_USE_ENV_PROXY=1 node scripts/e2e-testnet.mjs"
   },
   "dependencies": {
-    "@nen-near/core": "workspace:*",
+    "@bfa/core": "workspace:*",
     "@x402/core": "2.29.0",
     "@x402/evm": "2.29.0",
     "@x402/fetch": "2.29.0",

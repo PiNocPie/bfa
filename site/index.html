@@ -1,4 +1,4 @@
-<title>Nen</title>
+<title>BFA</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -260,7 +260,7 @@ footer.foot .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="nen-sticker" x="-10%" y="-10%" width="120%" height="120%"><feMorphology in="SourceAlpha" operator="dilate" radius="5" result="d"/><feFlood flood-color="#f7f8f4"/><feComposite in2="d" operator="in" result="halo"/><feMerge><feMergeNode in="halo"/><feMergeNode in="SourceGraphic"/></feMerge></filter><symbol id="nen-cat" viewBox="-8 -8 216 216"><g filter="url(#nen-sticker)">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="bfa-sticker" x="-10%" y="-10%" width="120%" height="120%"><feMorphology in="SourceAlpha" operator="dilate" radius="5" result="d"/><feFlood flood-color="#f7f8f4"/><feComposite in2="d" operator="in" result="halo"/><feMerge><feMergeNode in="halo"/><feMergeNode in="SourceGraphic"/></feMerge></filter><symbol id="bfa-cat" viewBox="-8 -8 216 216"><g filter="url(#bfa-sticker)">
   <g stroke="#111410" stroke-linecap="round" stroke-linejoin="round">
     <path d="M150 150 C178 154 190 132 176 116" fill="none" stroke-width="17"/>
     <path d="M150 150 C178 154 190 132 176 116" fill="none" stroke="#00EC97" stroke-width="8"/>
@@ -289,7 +289,7 @@ footer.foot .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:
 </g></symbol></defs></svg>
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#home" data-go="home"><svg class="cat" width="30" height="30" aria-hidden="true"><use href="#nen-cat"/></svg>nen<i>BUILT FOR AGENTS</i></a>
+    <a class="brand" href="#home" data-go="home"><svg class="cat" width="30" height="30" aria-hidden="true"><use href="#bfa-cat"/></svg>bfa<i>BUILT FOR AGENTS</i></a>
     <nav class="navlinks" aria-label="Main">
       <a href="#apis" data-go="apis">APIs &amp; calls</a>
       <a href="#agents" data-go="agents">Connect an agent</a>
@@ -307,22 +307,22 @@ footer.foot .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:
 
 <footer class="foot">
   <div class="wrap">
-    <span>Nen is open source (MIT). Testnet only: no mainnet money moves yet.</span>
+    <span>BFA is open source (MIT). Testnet only: no mainnet money moves yet.</span>
     <span><a href="https://github.com/PiNocPie/nen/blob/main/llms.txt">llms.txt</a> · <a href="https://github.com/PiNocPie/nen/tree/main/registry">Registry</a> · <a href="https://github.com/PiNocPie/nen/blob/main/registry/schema/listing.schema.json">Listing schema</a></span>
   </div>
 </footer>
 
 <script>
 /* ---------- data: real where it exists, labelled where it doesn't ---------- */
-const NEN_FEE = 0.03; // draft top-up fee, not final
+const BFA_FEE = 0.015; // 1.5% top-up fee, split on-chain at deposit
 const APIS = [
-  { id:"nen/near-account", name:"NEAR account state", provider:"Nen", cat:"NEAR-native", state:"live",
+  { id:"bfa/near-account", name:"NEAR account state", provider:"BFA", cat:"NEAR-native", state:"live",
     price:"0.001", empty:"free", network:"Base Sepolia", schemes:"batch-settlement, exact",
     desc:"Balance, locked balance, storage bytes and contract flag for one NEAR account id.",
     input:'{ "account_id": "nen-testnet.testnet" }',
     output:'{ "account_id": "nen-testnet.testnet",\n  "exists": true, "balance_yocto": "…",\n  "storage_bytes": 182, "has_contract": false }',
     sources:"NEAR testnet RPC (FastNEAR, falling back to rpc.testnet.near.org)", license:"Public chain data",
-    review:{ status:"Reviewed", by:"nen-team", at:"2026-11-03", sha:"7b787028…7deff0", match:true },
+    review:{ status:"Reviewed", by:"bfa-team", at:"2026-11-03", sha:"7b787028…7deff0", match:true },
     health:"22 paid / 29 calls · ~250 ms warm",
     bot:[["reachable",1,"HTTP 402 from POST /near/account"],["returns_402",1,"unpaid request gets 402"],["x402_v2",1,"x402Version 2, 2 payment options"],["networks_match",1,"every manifest network offered"],["schemes_match",1,"batch-settlement, exact"],["price_matches",1,"402 price = $0.001"],["pay_to",1,"0x11f4…4aa3"],["public_https",0,"localhost endpoint: deploy to https"]] },
   { id:"nansen/smart-money-holdings", name:"Smart Money holdings", provider:"Nansen", cat:"Onchain data", state:"review",
@@ -352,11 +352,11 @@ const APIS = [
     price:null, desc:"Tokens gaining mentions across crypto social accounts. Needs an Elfa partnership or your own Elfa key (BYOK).",
     input:"Not defined yet", output:"Not defined yet", sources:"Elfa", license:"Pending agreement with Elfa",
     review:null, health:"Not listed", bot:null },
-  { id:"nen/near-ft-balances", name:"NEAR token balances", provider:"Nen", cat:"NEAR-native", state:"planned",
+  { id:"bfa/near-ft-balances", name:"NEAR token balances", provider:"BFA", cat:"NEAR-native", state:"planned",
     price:null, desc:"Every fungible token an account holds, with decimals applied.",
     input:'{ "account_id": "…" }', output:"Not defined yet", sources:"NEAR RPC + token metadata", license:"Public chain data",
     review:null, health:"Not listed", bot:null },
-  { id:"nen/intents-quote", name:"NEAR Intents swap quote", provider:"Nen", cat:"NEAR-native", state:"planned",
+  { id:"bfa/intents-quote", name:"NEAR Intents swap quote", provider:"BFA", cat:"NEAR-native", state:"planned",
     price:null, desc:"Best cross-chain swap quote from NEAR Intents solvers for a token pair and amount.",
     input:'{ "from": "…", "to": "…", "amount": "…" }', output:"Not defined yet", sources:"NEAR Intents solver relay", license:"Public quotes",
     review:null, health:"Not listed", bot:null }
@@ -371,26 +371,26 @@ const TOOLS = [
   ["submit_listing","free","For sellers: schema check and an unpaid probe of your 402."]
 ];
 const RECEIPTS = [
-  ["18:14:46","rcpt_a1ae6129","nen/near-account","0.001",208,null],
-  ["18:14:38","rcpt_b5e2866a","nen/near-account","0.001",7861,"0x967354670d57bf5ab07b1280749c6cd938589c7d73bec9e3f0884e777a5cbac6"],
-  ["18:14:37","rcpt_6eb77daa","nen/near-account","0.001",1240,null],
-  ["05:32:30","rcpt_66e1fa70","nen/near-account","0.001",200,null],
-  ["05:32:30","rcpt_4f28949f","nen/near-account","0.001",213,null],
-  ["05:32:30","rcpt_5e0d0745","nen/near-account","0.001",202,null],
-  ["05:32:29","rcpt_c3f02259","nen/near-account","0.001",752,null],
-  ["05:15:45","rcpt_1953883b","nen/near-account","0.001",9055,"0x5b82eb434285b8077f76c4e0d1103fbf09d3281d2e909a3a7bd3cb901d5ad659"]
+  ["18:14:46","rcpt_a1ae6129","bfa/near-account","0.001",208,null],
+  ["18:14:38","rcpt_b5e2866a","bfa/near-account","0.001",7861,"0x967354670d57bf5ab07b1280749c6cd938589c7d73bec9e3f0884e777a5cbac6"],
+  ["18:14:37","rcpt_6eb77daa","bfa/near-account","0.001",1240,null],
+  ["05:32:30","rcpt_66e1fa70","bfa/near-account","0.001",200,null],
+  ["05:32:30","rcpt_4f28949f","bfa/near-account","0.001",213,null],
+  ["05:32:30","rcpt_5e0d0745","bfa/near-account","0.001",202,null],
+  ["05:32:29","rcpt_c3f02259","bfa/near-account","0.001",752,null],
+  ["05:15:45","rcpt_1953883b","bfa/near-account","0.001",9055,"0x5b82eb434285b8077f76c4e0d1103fbf09d3281d2e909a3a7bd3cb901d5ad659"]
 ];
 const state = {
   signedIn:false, email:"you@gmail.com",
-  balance:4.85, held:0.05,
+  balance:4.93, held:0.05,
   keys:[
-    { name:"research-agent", prefix:"nen_sk_test_7Qd2", created:"2026-11-01", expires:"2026-12-01", daily:"1.00", spent:"0.022",
-      perApi:[["nen/near-account","calls","200"],["nansen/smart-money-holdings","usd","0.50"]], scopes:["run","receipts"], status:"active" },
-    { name:"ci-smoke-test", prefix:"nen_sk_test_k91x", created:"2026-10-20", expires:"2026-10-27", daily:"0.10", spent:"0",
+    { name:"research-agent", prefix:"bfa_sk_test_7Qd2", created:"2026-11-01", expires:"2026-12-01", daily:"1.00", spent:"0.022",
+      perApi:[["bfa/near-account","calls","200"],["nansen/smart-money-holdings","usd","0.50"]], scopes:["run","receipts"], status:"active" },
+    { name:"ci-smoke-test", prefix:"bfa_sk_test_k91x", created:"2026-10-20", expires:"2026-10-27", daily:"0.10", spent:"0",
       perApi:[], scopes:["run"], status:"expired" }
   ],
-  activity:[["2026-11-01","Top-up · card","5.00","4.85"],["2026-11-01","Sign-up credit","0.00","0.00"]],
-  apiFilter:"all", apiQuery:"", openApi:"nen/near-account",
+  activity:[["2026-11-01","Top-up · card","5.00","4.93"],["2026-11-01","Sign-up credit","0.00","0.00"]],
+  apiFilter:"all", apiQuery:"", openApi:"bfa/near-account",
   draft:null, newSecret:null,
   topup:{ amount:10, method:"card" }
 };
@@ -413,7 +413,7 @@ function copy(text, btn){
   if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => toast("Select the text and copy it with Ctrl+C"));
   else toast("Select the text and copy it with Ctrl+C");
 }
-function randKey(){ const a="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"; let s=""; const b=new Uint32Array(32); crypto.getRandomValues(b); b.forEach(x=>s+=a[x%a.length]); return "nen_sk_test_"+s; }
+function randKey(){ const a="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"; let s=""; const b=new Uint32Array(32); crypto.getRandomValues(b); b.forEach(x=>s+=a[x%a.length]); return "bfa_sk_test_"+s; }
 const today = new Date("2026-11-03T12:00:00Z");
 const addDays = d => { const x=new Date(today); x.setUTCDate(x.getUTCDate()+d); return x.toISOString().slice(0,10); };
 
@@ -425,17 +425,17 @@ home(){ return `
     <div>
       <p class="label">Built for agents · an open API market</p>
       <h1 style="margin-top:14px">Built for agents. Paid one call at a time.</h1>
-      <p class="lede">Sign in with Google, top up with a card or crypto, and give your agent a key with an expiry date and daily limits. It finds an API, sees the exact price, pays for one call and gets a receipt.</p>
+      <p class="lede">Sign in with Google, top up with a card or crypto, and give your agent a key with an expiry date and daily limits. The money stays in your own wallet. Your agent finds an API, sees the exact price, pays for one call and gets a receipt.</p>
       <div class="cta">
         <button class="btn accent" data-go="signin">Get an API key</button>
         <button class="btn" data-go="apis">See every API</button>
       </div>
     </div>
     <figure class="ticket" style="margin:0" aria-label="A real agent session on testnet">
-      <svg class="cat perch" width="118" height="118" aria-hidden="true"><use href="#nen-cat"/></svg>
+      <svg class="cat perch" width="118" height="118" role="img" aria-label="BB, the BFA cat"><title>BB, the BFA cat</title><use href="#bfa-cat"/></svg>
       <header><span>AGENT SESSION · TESTNET</span><span>2026-11-03 18:14 UTC</span></header>
       <ol>
-        <li><b>discover</b><span>"near account balance" → nen/near-account</span><span>free</span></li>
+        <li><b>discover</b><span>"near account balance" → bfa/near-account</span><span>free</span></li>
         <li><b>inspect</b><span>$0.001 / call · empty result free · error free</span><span>free</span></li>
         <li><b>run</b><span>{"account":"oops"} → invalid_input. Not charged.</span><span>$0</span></li>
         <li><b>run</b><span>paid_ok · exists: true</span><span class="num">300 ms</span></li>
@@ -453,7 +453,7 @@ home(){ return `
   <div class="rows">
     <div class="row3">
       <h2>For the person</h2>
-      <p>One account, one balance. Card top-ups go through Privy's on-ramp (Stripe or MoonPay); crypto top-ups are USDC on Base or anything NEAR Intents can bridge. The fee is shown before you pay.</p>
+      <p>Your money stays in your own wallet, controlled by your NEAR account. Top up by card through Privy's on-ramp (Stripe or MoonPay), with USDC on Base, or with anything NEAR Intents can bridge. The 1.5% fee is shown before you pay.</p>
       <ol class="steps"><li>Sign in with Google</li><li>Top up $5 or more</li><li>Create a key with limits</li><li>Paste it into your agent</li></ol>
     </div>
     <div class="row3">
@@ -463,8 +463,8 @@ home(){ return `
     </div>
     <div class="row3">
       <h2>For the seller</h2>
-      <p>List any x402 API by pull request. A bot probes your 402, a Nen reviewer approves the manifest hash, and edits pause routing until the next review.</p>
-      <ol class="steps"><li>Serve x402 V2</li><li>Write nen.json</li><li>Run submit_listing</li><li>Get reviewed</li></ol>
+      <p>List any x402 API by pull request. A bot probes your 402, a BFA reviewer approves the manifest hash, and edits pause routing until the next review.</p>
+      <ol class="steps"><li>Serve x402 V2</li><li>Write bfa.json</li><li>Run submit_listing</li><li>Get reviewed</li></ol>
     </div>
   </div>`; },
 
@@ -496,26 +496,26 @@ apis(){
     </tbody></table></div>
   ${open ? apiDetail(open) : ""}
   <div class="section" style="margin-top:40px">
-    <div class="hd"><div><p class="label">Agent tools</p><h2 style="margin-top:8px">The calls your agent makes to Nen</h2></div></div>
+    <div class="hd"><div><p class="label">Agent tools</p><h2 style="margin-top:8px">The calls your agent makes to BFA</h2></div></div>
     <div class="toolgrid">${TOOLS.map(([n,p,d])=>`<div><code>${n}</code> <span class="pill ${p==="paid"?"bad":"plain"}" style="margin-left:6px">${p}</span><p>${d}</p></div>`).join("")}</div>
   </div>`; },
 
 agents(){ const key = state.keys.find(k=>k.status==="active");
   return `
   <div class="page-head"><div><p class="label">Connect an agent</p><h1 style="font-size:clamp(1.6rem,3.4vw,2.3rem);margin-top:10px">Paste one config, then ask for data</h1>
-  <p>The agent authenticates with a Nen API key. It never sees your card, your Google account or a wallet key. Create the key in the console, where you set its expiry and limits.</p></div></div>
+  <p>The agent authenticates with a BFA API key. It never sees your card, your Google account or a wallet key. Create the key in the console, where you set its expiry and limits.</p></div></div>
   <div class="grid2">
     <div class="stack">
       <p class="label">Claude Code</p>
-      <pre id="cfg1">claude mcp add --transport http nen https://mcp.nen.dev/v1 \\
-  --header "Authorization: Bearer $NEN_API_KEY"</pre>
+      <pre id="cfg1">claude mcp add --transport http bfa https://mcp.bfa.dev/v1 \\
+  --header "Authorization: Bearer $BFA_API_KEY"</pre>
       <p class="label" style="margin-top:8px">Any MCP client (.mcp.json)</p>
       <pre id="cfg2">{
   "mcpServers": {
-    "nen": {
+    "bfa": {
       "type": "http",
-      "url": "https://mcp.nen.dev/v1",
-      "headers": { "Authorization": "Bearer \${NEN_API_KEY}" }
+      "url": "https://mcp.bfa.dev/v1",
+      "headers": { "Authorization": "Bearer \${BFA_API_KEY}" }
     }
   }
 }</pre>
@@ -524,7 +524,7 @@ agents(){ const key = state.keys.find(k=>k.status==="active");
     </div>
     <div class="stack">
       <p class="label">Try this prompt</p>
-      <pre id="prompt">Use Nen to check the NEAR testnet account
+      <pre id="prompt">Use BFA to check the NEAR testnet account
 nen-testnet.testnet. Inspect the price first,
 and don't spend more than $0.01.</pre>
       <div><button class="btn small ghost" data-copy="prompt">Copy prompt</button></div>
@@ -546,7 +546,7 @@ sell(){ const a = APIS[0]; return `
   <div class="grid2">
     <ol class="steps" style="gap:16px;font-size:.95rem">
       <li><span><b>Serve x402 V2.</b> <span class="muted">Put any @x402 server middleware in front of your endpoint.</span></span></li>
-      <li><span><b>Write nen.json.</b> <span class="muted">Price, input and output schemas, networks, data sources and license.</span></span></li>
+      <li><span><b>Write bfa.json.</b> <span class="muted">Price, input and output schemas, networks, data sources and license.</span></span></li>
       <li><span><b>Run submit_listing.</b> <span class="muted">The bot probes your unpaid 402 and lists anything to fix. Nothing is published.</span></span></li>
       <li><span><b>Open a pull request.</b> <span class="muted">A reviewer pins your manifest's sha256. Editing it pauses routing until re-review.</span></span></li>
     </ol>
@@ -558,13 +558,14 @@ sell(){ const a = APIS[0]; return `
 
 signin(){ return `
   <div class="signin">
-    <svg class="cat" width="76" height="76" aria-hidden="true" style="justify-self:center"><use href="#nen-cat"/></svg>
-    <div><p class="label">Nen console</p><h2 style="margin-top:10px">Sign in</h2><p class="sub" style="margin-top:6px">New here? Signing in creates your account.</p></div>
+    <svg class="cat" width="76" height="76" aria-hidden="true" style="justify-self:center"><use href="#bfa-cat"/></svg>
+    <p class="sub" style="text-align:center;margin-top:-8px">Hi, I'm BB. I keep your receipts.</p>
+    <div><p class="label">BFA console</p><h2 style="margin-top:10px">Sign in</h2><p class="sub" style="margin-top:6px">New here? Signing in creates your account.</p></div>
     <button class="btn solid gbtn" id="google">Continue with Google</button>
     <div class="or">or</div>
     <label class="field"><span>Email</span><input class="input" id="email" type="email" placeholder="you@example.com" autocomplete="email"></label>
     <button class="btn gbtn" id="emailbtn">Email me a code</button>
-    <p class="sub">Sign-in is handled by Privy. Nen never sees your password.</p>
+    <p class="sub">Sign-in is handled by Privy. BFA never sees your password.</p>
   </div>`; },
 
 overview(){ const k=state.keys.filter(k=>k.status==="active"); const spent=0.022, cap=1;
@@ -580,7 +581,7 @@ overview(){ const k=state.keys.filter(k=>k.status==="active"); const spent=0.022
 
 keys(){ return consoleWrap("keys", `
   ${state.newSecret ? `<div class="secret" role="status">
-      <h3>Copy your new key now</h3><p class="sub" style="color:inherit">This is the only time Nen shows it. Store it as NEN_API_KEY where your agent runs.</p>
+      <h3>Copy your new key now</h3><p class="sub" style="color:inherit">This is the only time BFA shows it. Store it as BFA_API_KEY where your agent runs.</p>
       <div class="val"><code id="secretval">${state.newSecret}</code><button class="btn small solid" data-copy="secretval">Copy</button><button class="btn small" id="dismiss">I saved it</button></div>
     </div>` : ""}
   ${state.draft ? keyForm() : `<div class="hd" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><p class="muted">Keys let an agent spend from your balance, within the limits you set on each key.</p><button class="btn accent" id="newkey">Create API key</button></div>`}
@@ -597,15 +598,15 @@ keys(){ return consoleWrap("keys", `
     </tr>`).join("")}</tbody></table></div>
   <p class="sub" style="margin-top:12px">Limits reset at 00:00 UTC. A call that would cross a limit is refused before payment, and the agent gets <span class="mono">limit_reached</span> with the time the limit resets.</p>`); },
 
-wallet(){ const t=state.topup, fee=+(t.amount*NEN_FEE).toFixed(2), credit=+(t.amount-fee).toFixed(2);
+wallet(){ const t=state.topup, fee=Math.round(t.amount*100*BFA_FEE)/100, credit=+(t.amount-fee).toFixed(2);
   return consoleWrap("wallet", `
   <div class="tiles">
-    <div><p class="label">Balance</p><b>${usd2(state.balance)}</b><p class="sub">USDC, held in your Nen wallet</p></div>
+    <div><p class="label">Balance</p><b>${usd2(state.balance)}</b><p class="sub">USDC in your own wallet. BFA can't move it.</p></div>
     <div><p class="label">Held</p><b>${usd2(state.held)}</b><p class="sub">Locked in open payment channels. Unused funds return to your balance.</p></div>
     <div><p class="label">Available</p><b>${usd2(state.balance-state.held)}</b><p class="sub">What your keys can spend now</p></div>
   </div>
   <div class="panel">
-    <div class="ph"><h3>Top up</h3><span class="sub">Minimum $5</span></div>
+    <div class="ph"><h3>Top up</h3><span class="sub">Minimum $5 · 1.5% fee</span></div>
     <div class="pb">
       <div class="field"><span>Amount</span>
         <div class="amounts">${[5,10,25,50].map(a=>`<button data-amt="${a}" aria-pressed="${t.amount===a}">$${a}</button>`).join("")}
@@ -618,11 +619,11 @@ wallet(){ const t=state.topup, fee=+(t.amount*NEN_FEE).toFixed(2), credit=+(t.am
           <button class="method" data-method="intents" aria-pressed="${t.method==="intents"}"><b>Any token via NEAR Intents</b><span>Pay from NEAR, Ethereum, Solana and more. Converted to USDC.</span></button>
         </div>
       </div>
-      ${t.method==="base" ? `<div class="field"><span>Deposit address (Base)</span><div class="addr"><code id="dep">0xcB9fFe1087b5442ceEf609361CE633B1795C21cA</code><button class="btn small ghost" data-copy="dep">Copy</button></div><small>Send USDC only, on Base. Other tokens or networks sent here can be lost.</small></div>` : ""}
+      ${t.method==="base" ? `<div class="field"><span>Your top-up address (Base)</span><div class="addr"><code id="dep">0x…your address appears after sign-in</code><button class="btn small ghost" data-copy="dep">Copy</button></div><small>Send USDC only, on Base. A public contract splits each deposit: 98.5% to your wallet, 1.5% to BFA. Nobody, including BFA, can send it anywhere else.</small></div>` : ""}
       <div class="calc" aria-live="polite">
         <div><span>You pay</span><span class="num">${usd2(t.amount)}</span></div>
-        <div><span>Nen fee (${(NEN_FEE*100).toFixed(0)}%, draft rate)</span><span class="num">−${usd2(fee)}</span></div>
-        <div class="tot"><span>Added to your balance</span><span class="num">${usd2(credit)}</span></div>
+        <div><span>BFA fee (${(BFA_FEE*100).toFixed(1)}%)</span><span class="num">−${usd2(fee)}</span></div>
+        <div class="tot"><span>Lands in your wallet</span><span class="num">${usd2(credit)}</span></div>
       </div>
     </div>
     <div class="pf"><button class="btn accent" id="pay" ${t.amount>=5?"":"disabled"}>${t.method==="card"?`Continue to payment · ${usd2(t.amount)}`:t.method==="base"?"I've sent it":`Get a NEAR Intents quote`}</button></div>
@@ -635,7 +636,7 @@ usage(){ return consoleWrap("usage", `
   <div class="tiles">
     <div><p class="label">Calls today</p><b>22</b><p class="sub">22 paid · 7 failed, not charged</p></div>
     <div><p class="label">Spent today</p><b>${meter("0.022")}</b><p class="sub">research-agent</p></div>
-    <div><p class="label">nen/near-account</p><b>22<span class="sub" style="font-size:.9rem"> / 200 calls</span></b><div class="bar"><i style="width:11%"></i></div><p class="sub">per-API limit on research-agent</p></div>
+    <div><p class="label">bfa/near-account</p><b>22<span class="sub" style="font-size:.9rem"> / 200 calls</span></b><div class="bar"><i style="width:11%"></i></div><p class="sub">per-API limit on research-agent</p></div>
   </div>
   <div class="section"><div class="hd"><h3>Receipts</h3><span class="sub">Real testnet receipts from payer 0xcB9f…21cA</span></div>${receiptsTable(99)}</div>
   <p class="sub" style="margin-top:12px">Rows with a transaction are payment-channel deposits, signed by NEAR Chain Signatures. Other calls are vouchers against that deposit.</p>`); }
@@ -685,7 +686,7 @@ function consoleWrap(cur, body){
   return `<div class="preview-note">Console preview. Sign-in, payments and keys are not connected yet; balances and keys are sample data. Receipts are real testnet receipts.</div>
   <div class="console">
     <nav class="rail" aria-label="Console">
-      <div class="who"><b>${esc(state.email)}</b><span>NEAR account a91f…3c0e (created at sign-in)</span></div>
+      <div class="who"><b>${esc(state.email)}</b><span>Your NEAR account a91f…3c0e, created at sign-in</span></div>
       ${CONSOLE.map(v=>`<a href="#${v}" data-go="${v}" ${v===cur?'aria-current="page"':""}>${titles[v]}${v==="keys"?`<span class="sub">${state.keys.filter(k=>k.status==="active").length}</span>`:""}</a>`).join("")}
       <a href="#home" id="signout">Sign out</a>
     </nav>
@@ -753,14 +754,14 @@ document.addEventListener("click", e => {
   if (t.id === "newkey") { state.draft = newDraft(); state.newSecret = null; render(); return; }
   if (t.id === "cancelkey") { state.draft = null; render(); return; }
   if (t.dataset.exp) { syncDraft(); state.draft.exp = t.dataset.exp; render(); return; }
-  if (t.id === "addlimit") { syncDraft(); state.draft.perApi.push(["nen/near-account","calls","100"]); render(); return; }
+  if (t.id === "addlimit") { syncDraft(); state.draft.perApi.push(["bfa/near-account","calls","100"]); render(); return; }
   if (t.dataset.ldel) { syncDraft(); state.draft.perApi.splice(+t.dataset.ldel,1); render(); return; }
   if (t.id === "createkey") { createKey(); return; }
   if (t.id === "dismiss") { state.newSecret = null; render(); return; }
   if (t.dataset.revoke) { const k = state.keys[+t.dataset.revoke]; k.status = "revoked"; render(); toast(`Revoked ${k.name}. Calls with it now fail with key_revoked.`); return; }
   if (t.dataset.amt) { state.topup.amount = +t.dataset.amt; render(); return; }
   if (t.dataset.method) { state.topup.method = t.dataset.method; render(); return; }
-  if (t.id === "pay") { toast(state.topup.method==="card" ? "Preview: the Privy on-ramp opens here once it's connected" : state.topup.method==="base" ? "Preview: Nen credits your balance when the deposit confirms" : "Preview: a NEAR Intents quote appears here"); return; }
+  if (t.id === "pay") { toast(state.topup.method==="card" ? "Preview: the Privy on-ramp opens here once it's connected" : state.topup.method==="base" ? "Preview: BFA credits your balance when the deposit confirms" : "Preview: a NEAR Intents quote appears here"); return; }
 });
 document.addEventListener("keydown", e => { const r = e.target.closest?.("tr[data-api]"); if (r && (e.key==="Enter"||e.key===" ")) { e.preventDefault(); r.click(); } });
 document.addEventListener("input", e => {

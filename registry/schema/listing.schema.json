@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/nen-near/nen/registry/schema/listing.schema.json",
-  "title": "Nen listing manifest (nen.json)",
-  "description": "One API endpoint offered to AI agents on Nen. Submitted by the seller, auto-checked by the listing bot, then reviewed by the Nen team. Review status is NOT part of this file; it lives in registry/reviews/<id>.json and is written only by reviewers.",
+  "$id": "https://github.com/bfa-near/bfa/registry/schema/listing.schema.json",
+  "title": "BFA listing manifest (bfa.json)",
+  "description": "One API endpoint offered to AI agents on BFA. Submitted by the seller, auto-checked by the listing bot, then reviewed by the BFA team. Review status is NOT part of this file; it lives in registry/reviews/<id>.json and is written only by reviewers.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -141,7 +141,7 @@
       "properties": {
         "model": {
           "const": "per_call",
-          "description": "Nen is pay-as-you-go only: no subscriptions, no prepaid credits."
+          "description": "BFA is pay-as-you-go only: no subscriptions, no prepaid credits."
         },
         "amount_usd": {
           "type": "string",

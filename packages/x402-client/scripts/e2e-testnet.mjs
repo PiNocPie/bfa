@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// End-to-end on testnets: a NEAR testnet account pays the Nen demo seller per call over x402 on Base Sepolia.
+// End-to-end on testnets: a NEAR testnet account pays the BFA demo seller per call over x402 on Base Sepolia.
 // Call 1 opens a batch-settlement channel: its deposit is signed by NEAR Chain Signatures (~25s, once).
 // Calls 2..N are vouchers signed by the local session key (no MPC round-trip).
 //
@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { ReceiptLog } from "@nen-near/core";
+import { ReceiptLog } from "@bfa/core";
 import { callListing, chainSignaturesSigner, loadOrCreateSessionSigner, nearAccount, nearMpc, NETWORKS } from "../dist/index.js";
 
 const accountId = process.env.NEAR_ACCOUNT_ID;
@@ -18,7 +18,7 @@ if (!accountId) throw new Error("set NEAR_ACCOUNT_ID");
 const privateKey =
   process.env.NEAR_PRIVATE_KEY ??
   JSON.parse(readFileSync(join(homedir(), ".near-credentials", "testnet", `${accountId}.json`), "utf8")).private_key;
-const state = process.env.NEN_STATE_DIR ?? join(homedir(), ".nen");
+const state = process.env.BFA_STATE_DIR ?? join(homedir(), ".bfa");
 const calls = Number(process.env.CALLS ?? 5);
 const sellerUrl = process.env.SELLER_URL ?? "http://localhost:8402/near/account";
 
@@ -27,7 +27,7 @@ const account = nearAccount({ accountId, privateKey, networkId: "testnet", ...(r
 const signer = await chainSignaturesSigner({
   mpc: nearMpc({ networkId: "testnet", caller: account }),
   predecessor: accountId,
-  path: process.env.NEN_AGENT_PATH ?? "nen/agent-1",
+  path: process.env.BFA_AGENT_PATH ?? "nen/agent-1",
 });
 const session = {
   signer: await loadOrCreateSessionSigner(join(state, "session.key")),
@@ -38,8 +38,8 @@ const log = new ReceiptLog(join(state, "receipts.jsonl"));
 
 const listing = {
   manifest_version: 1,
-  id: "nen/near-account",
-  provider: { name: "Nen demo seller", url: "https://github.com/PiNocPie/nen", contact: "github:PiNocPie" },
+  id: "bfa/near-account",
+  provider: { name: "BFA demo seller", url: "https://github.com/PiNocPie/nen", contact: "github:PiNocPie" },
   name: "NEAR testnet account state",
   description: "Balance, storage and contract flag for one NEAR testnet account, sold per call.",
   categories: ["near-native"],
@@ -52,7 +52,7 @@ const listing = {
   },
   pricing: { model: "per_call", amount_usd: "0.001" },
   payment: { protocol: "x402", schemes: ["batch-settlement", "exact"], networks: [NETWORKS.baseSepolia], payout: { via: "direct" } },
-  data: { sources: "NEAR testnet RPC", license_statement: "Public chain data served by the Nen demo seller." },
+  data: { sources: "NEAR testnet RPC", license_statement: "Public chain data served by the BFA demo seller." },
 };
 
 console.log(JSON.stringify({ agent_near: accountId, agent_base: signer.address, session_key: session.signer.address, calls }));

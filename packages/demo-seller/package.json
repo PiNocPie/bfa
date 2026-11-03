@@ -1,8 +1,8 @@
 {
-  "name": "@nen-near/demo-seller",
+  "name": "@bfa/demo-seller",
   "version": "0.1.0",
   "private": true,
-  "description": "Nen's demo x402 seller on Base Sepolia: NEAR-native endpoints sold per call (exact + batch-settlement).",
+  "description": "BFA's demo x402 seller on Base Sepolia: NEAR-native endpoints sold per call (exact + batch-settlement).",
   "license": "MIT",
   "type": "module",
   "scripts": {

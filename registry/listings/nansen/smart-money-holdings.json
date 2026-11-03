@@ -8,7 +8,7 @@
     "contact": "https://docs.nansen.ai"
   },
   "name": "Nansen Smart Money holdings",
-  "description": "Current token holdings of wallets Nansen labels as Smart Money, filtered by chain. Public x402 endpoint indexed by the Nen community; payment goes directly to Nansen. Smart Money tier, $0.05 per call. Rate limit 5 req/s and 60 req/min per paying wallet.",
+  "description": "Current token holdings of wallets Nansen labels as Smart Money, filtered by chain. Public x402 endpoint indexed by the BFA community; payment goes directly to Nansen. Smart Money tier, $0.05 per call. Rate limit 5 req/s and 60 req/min per paying wallet.",
   "categories": ["onchain-data", "market-data"],
   "tags": ["smart-money", "holdings", "nansen", "wallets"],
   "endpoint": {
@@ -36,7 +36,7 @@
   },
   "data": {
     "sources": "Nansen's own labelled onchain dataset, sold by Nansen over its public x402 API.",
-    "license_statement": "Nen only indexes the endpoint; the agent pays Nansen directly and Nansen's API terms apply. Nen does not resell the data.",
+    "license_statement": "BFA only indexes the endpoint; the agent pays Nansen directly and Nansen's API terms apply. BFA does not resell the data.",
     "terms_url": "https://docs.nansen.ai/getting-started/agentic-payments/x402-payments"
   }
 }

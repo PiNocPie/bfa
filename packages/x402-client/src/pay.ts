@@ -4,7 +4,7 @@ import { BatchSettlementEvmScheme } from "@x402/evm/batch-settlement/client";
 import { FileClientChannelStorage } from "@x402/evm/batch-settlement/client/file-storage";
 import { decodePaymentResponseHeader, wrapFetchWithPayment, x402Client } from "@x402/fetch";
 import {
-  NenError,
+  BfaError,
   ReceiptLog,
   assertWithinDailyBudget,
   newReceiptId,
@@ -13,17 +13,17 @@ import {
   type Listing,
   type Receipt,
   type X402Scheme,
-} from "@nen-near/core";
+} from "@bfa/core";
 import type { SessionConfig } from "./session.js";
-import type { NenSigner } from "./signers.js";
+import type { BfaSigner } from "./signers.js";
 
-/** CAIP-2 ids. Testnet first: Base Sepolia is where Nen's demo seller and test agents run. */
+/** CAIP-2 ids. Testnet first: Base Sepolia is where BFA's demo seller and test agents run. */
 export const NETWORKS = { baseMainnet: "eip155:8453", baseSepolia: "eip155:84532" } as const;
 
 export interface CallOptions {
   listing: Listing;
   input: Record<string, unknown>;
-  signer: NenSigner;
+  signer: BfaSigner;
   log: ReceiptLog;
   /** Same key → same receipt, never a second payment. Defaults to a random key (no dedupe). */
   idempotencyKey?: string;
@@ -83,7 +83,7 @@ const SCHEME_RANK: Record<string, number> = { "batch-settlement": 0, exact: 1 };
  */
 export function payingFetch(
   listing: Listing,
-  signer: NenSigner,
+  signer: BfaSigner,
   fetchImpl: typeof fetch = fetch,
   session?: SessionConfig,
 ): typeof fetch {
@@ -92,7 +92,7 @@ export function payingFetch(
 
 function buildPayingFetch(
   listing: Listing,
-  signer: NenSigner,
+  signer: BfaSigner,
   fetchImpl: typeof fetch,
   session: SessionConfig | undefined,
 ): { fetch: typeof fetch; usedScheme: () => X402Scheme | undefined; signMs: () => number | undefined } {
@@ -189,7 +189,7 @@ export async function callListing(opts: CallOptions): Promise<CallResult> {
   }
 
   if (opts.maxPriceUsd !== undefined && usdToMicros(listing.pricing.amount_usd) > usdToMicros(opts.maxPriceUsd)) {
-    throw new NenError({
+    throw new BfaError({
       code: "over_max_price",
       message: `${listing.id} costs $${listing.pricing.amount_usd}, above max $${opts.maxPriceUsd}`,
       next_action: "raise_max_price",

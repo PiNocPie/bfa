@@ -1,4 +1,4 @@
-import { NenError } from "./errors.js";
+import { BfaError } from "./errors.js";
 import { microsToUsd, usdToMicros } from "./money.js";
 import type { Category, Health, Quote, RegistryEntry } from "./types.js";
 
@@ -114,7 +114,7 @@ export function quote(candidates: RegistryEntry[], health: HealthSource, opts: Q
   const routable = candidates.filter((e) => e.routable);
   if (routable.length === 0) {
     const reason = candidates[0]?.not_routable_reason;
-    throw new NenError({
+    throw new BfaError({
       code: candidates.length ? "listing_not_routable" : "no_matching_listing",
       message: candidates.length ? `no routable listing (${reason ?? "not reviewed"})` : "no listing matches the request",
       next_action: "stop",
@@ -125,7 +125,7 @@ export function quote(candidates: RegistryEntry[], health: HealthSource, opts: Q
     (e) => !opts.payerNetworks || e.listing.payment.networks.some((n) => opts.payerNetworks!.includes(n)),
   );
   if (payable.length === 0) {
-    throw new NenError({
+    throw new BfaError({
       code: "no_matching_listing",
       message: `no listing accepts payment on ${opts.payerNetworks?.join(", ")}`,
       next_action: "top_up",
@@ -137,7 +137,7 @@ export function quote(candidates: RegistryEntry[], health: HealthSource, opts: Q
     const cheapest = payable.reduce((a, b) =>
       usdToMicros(a.listing.pricing.amount_usd) <= usdToMicros(b.listing.pricing.amount_usd) ? a : b,
     );
-    throw new NenError({
+    throw new BfaError({
       code: "over_max_price",
       message: `cheapest matching listing costs $${cheapest.listing.pricing.amount_usd}, above max $${opts.maxPriceUsd}`,
       next_action: "raise_max_price",

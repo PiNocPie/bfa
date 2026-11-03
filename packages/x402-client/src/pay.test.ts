@@ -6,7 +6,7 @@ import {
   encodePaymentRequiredHeader,
   encodePaymentResponseHeader,
 } from "@x402/core/http";
-import { ReceiptLog, type Listing } from "@nen-near/core";
+import { ReceiptLog, type Listing } from "@bfa/core";
 import { getAddress, verifyTypedData, type Hex } from "viem";
 import { privateKeyToAccount, sign } from "viem/accounts";
 import { describe, expect, it } from "vitest";
@@ -22,7 +22,7 @@ function listing(price = "0.01"): Listing {
   return {
     manifest_version: 1,
     id: "demo/near-intents-status",
-    provider: { name: "Nen demo seller", url: "https://example.com", contact: "ops@example.com" },
+    provider: { name: "BFA demo seller", url: "https://example.com", contact: "ops@example.com" },
     name: "Demo endpoint",
     description: "Test endpoint used by the x402 client tests, on Base Sepolia.",
     categories: ["near-native"],
@@ -104,7 +104,7 @@ function fakeSeller(opts: SellerOpts) {
 }
 
 async function newLog(): Promise<ReceiptLog> {
-  return new ReceiptLog(join(await mkdtemp(join(tmpdir(), "nen-pay-")), "receipts.jsonl"));
+  return new ReceiptLog(join(await mkdtemp(join(tmpdir(), "bfa-pay-")), "receipts.jsonl"));
 }
 
 describe("callListing over x402 V2", () => {

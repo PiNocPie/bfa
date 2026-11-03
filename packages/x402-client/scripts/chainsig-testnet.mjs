@@ -20,7 +20,7 @@ const privateKey =
   process.env.NEAR_PRIVATE_KEY ??
   JSON.parse(readFileSync(join(homedir(), ".near-credentials", "testnet", `${accountId}.json`), "utf8")).private_key;
 const rpc = process.env.NEAR_RPC_URL ?? "https://rpc.testnet.near.org";
-const path = process.env.NEN_AGENT_PATH ?? "nen/agent-1";
+const path = process.env.BFA_AGENT_PATH ?? "nen/agent-1";
 
 const account = new Account(accountId, rpc, privateKey);
 const mpc = nearMpc({ networkId: "testnet", caller: account });

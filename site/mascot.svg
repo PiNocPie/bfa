@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 216 216" role="img" aria-label="Nen mascot: a round green cat holding a receipt">
-<defs><filter id="nen-sticker" x="-10%" y="-10%" width="120%" height="120%"><feMorphology in="SourceAlpha" operator="dilate" radius="5" result="d"/><feFlood flood-color="#f7f8f4"/><feComposite in2="d" operator="in" result="halo"/><feMerge><feMergeNode in="halo"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-<g filter="url(#nen-sticker)">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 216 216" role="img" aria-label="BFA mascot: a round green cat holding a receipt">
+<defs><filter id="bfa-sticker" x="-10%" y="-10%" width="120%" height="120%"><feMorphology in="SourceAlpha" operator="dilate" radius="5" result="d"/><feFlood flood-color="#f7f8f4"/><feComposite in2="d" operator="in" result="halo"/><feMerge><feMergeNode in="halo"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<g filter="url(#bfa-sticker)">
   <g stroke="#111410" stroke-linecap="round" stroke-linejoin="round">
     <path d="M150 150 C178 154 190 132 176 116" fill="none" stroke-width="17"/>
     <path d="M150 150 C178 154 190 132 176 116" fill="none" stroke="#00EC97" stroke-width="8"/>

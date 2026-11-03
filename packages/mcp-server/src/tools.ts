@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import {
-  NenError,
+  BfaError,
   ReceiptLog,
   discover as discoverListings,
   healthFromReceipts,
@@ -15,7 +15,7 @@ import {
   type Listing,
   type Receipt,
   type RegistryEntry,
-} from "@nen-near/core";
+} from "@bfa/core";
 import {
   NETWORKS,
   callListing,
@@ -24,13 +24,13 @@ import {
   nearAccount,
   nearMpc,
   probeListing,
-  type NenSigner,
+  type BfaSigner,
   type SessionConfig,
-} from "@nen-near/x402-client";
+} from "@bfa/x402-client";
 import { createPublicClient, erc20Abi, http, type Hex } from "viem";
 import { base, baseSepolia } from "viem/chains";
 
-export interface NenConfig {
+export interface BfaConfig {
   registryDir: string;
   /** Extra local registry (e.g. a localhost demo seller). Uses the main registry's schemas. */
   devRegistryDir?: string;
@@ -44,7 +44,7 @@ export interface NenConfig {
   maxDepositUsd: string;
   /** Injected for tests. */
   fetchImpl?: typeof fetch;
-  signerOverride?: NenSigner;
+  signerOverride?: BfaSigner;
 }
 
 const PAYER_NETWORK = { testnet: NETWORKS.baseSepolia, mainnet: NETWORKS.baseMainnet } as const;
@@ -53,7 +53,7 @@ const USDC = {
   [NETWORKS.baseMainnet]: { chain: base, address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as Hex },
 } as const;
 
-export function tools(cfg: NenConfig) {
+export function tools(cfg: BfaConfig) {
   const log = new ReceiptLog(join(cfg.stateDir, "receipts.jsonl"));
   const payerNetwork = PAYER_NETWORK[cfg.network];
   const ajv = new Ajv2020({ strict: false, allErrors: true });
@@ -68,16 +68,16 @@ export function tools(cfg: NenConfig) {
 
   async function entry(id: string): Promise<RegistryEntry> {
     const e = (await entries()).find((x) => x.listing.id === id);
-    if (!e) throw new NenError({ code: "no_matching_listing", message: `no listing "${id}"`, next_action: "stop" });
+    if (!e) throw new BfaError({ code: "no_matching_listing", message: `no listing "${id}"`, next_action: "stop" });
     return e;
   }
 
-  let signerP: Promise<NenSigner> | undefined;
-  function signer(): Promise<NenSigner> {
+  let signerP: Promise<BfaSigner> | undefined;
+  function signer(): Promise<BfaSigner> {
     if (cfg.signerOverride) return Promise.resolve(cfg.signerOverride);
     if (!cfg.nearAccountId || !cfg.nearPrivateKey) {
       return Promise.reject(
-        new NenError({
+        new BfaError({
           code: "signer_unavailable",
           message: "no NEAR account configured: set NEAR_ACCOUNT_ID and NEAR_PRIVATE_KEY in the MCP server's environment",
           next_action: "stop",
@@ -167,7 +167,7 @@ export function tools(cfg: NenConfig) {
         const ids = new Set(discoverListings(all, a.query).map((h) => h.id));
         candidates = all.filter((e) => ids.has(e.listing.id));
       } else {
-        throw new NenError({ code: "invalid_input", message: "pass query or listing_ids", next_action: "fix_input" });
+        throw new BfaError({ code: "invalid_input", message: "pass query or listing_ids", next_action: "fix_input" });
       }
       return rankListings(candidates, await health(), {
         payerNetworks: [payerNetwork],
@@ -187,7 +187,7 @@ export function tools(cfg: NenConfig) {
       else if (a.query) {
         const q = await this.quote({ query: a.query, ...(a.max_price_usd && { max_price_usd: a.max_price_usd }) });
         order = [q.listing_id, ...q.fallbacks];
-      } else throw new NenError({ code: "invalid_input", message: "pass listing_id or query", next_action: "fix_input" });
+      } else throw new BfaError({ code: "invalid_input", message: "pass listing_id or query", next_action: "fix_input" });
 
       const s = await signer();
       const sess = await session();
@@ -195,7 +195,7 @@ export function tools(cfg: NenConfig) {
       for (const [i, id] of order.entries()) {
         const e = await entry(id);
         if (!e.routable) {
-          throw new NenError({
+          throw new BfaError({
             code: "listing_not_routable",
             message: `${id} is not routable: ${e.not_routable_reason}`,
             next_action: "stop",
@@ -203,7 +203,7 @@ export function tools(cfg: NenConfig) {
         }
         const validate = ajv.compile(e.listing.endpoint.input_schema);
         if (!validate(a.input)) {
-          throw new NenError({
+          throw new BfaError({
             code: "invalid_input",
             message: `input does not match ${id} input_schema: ${ajv.errorsText(validate.errors)}`,
             next_action: "fix_input",
@@ -281,7 +281,7 @@ export function tools(cfg: NenConfig) {
         bot_report: report,
         passed,
         next_steps: passed
-          ? [`Open a PR adding the manifest at ${path}.`, "The Nen team peer-reviews it; once approved it becomes routable."]
+          ? [`Open a PR adding the manifest at ${path}.`, "The BFA team peer-reviews it; once approved it becomes routable."]
           : ["Fix the failing checks above and run submit_listing again. Nothing was published."],
         path_matches_id: idFromPath(join(cfg.registryDir, "listings"), join(cfg.registryDir, "listings", `${id}.json`)) === id,
       };

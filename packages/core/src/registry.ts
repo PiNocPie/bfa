@@ -112,7 +112,7 @@ export async function loadRegistry(registryDir: string, schemaDir = join(registr
     let routable = false;
     let not_routable_reason: string | undefined;
     if (!review) {
-      not_routable_reason = "pending review by the Nen team";
+      not_routable_reason = "pending review by the BFA team";
     } else if (!ROUTABLE.has(review.status)) {
       not_routable_reason = `review status is ${review.status}`;
     } else if (review.manifest_sha256 !== manifest_sha256) {

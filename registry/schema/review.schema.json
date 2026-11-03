@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/nen-near/nen/registry/schema/review.schema.json",
-  "title": "Nen review record",
-  "description": "Written only by the Nen review team (enforced by CODEOWNERS on registry/reviews/). A listing is routable only when its review status is reviewed or verified-provider AND manifest_sha256 matches the current manifest.",
+  "$id": "https://github.com/bfa-near/bfa/registry/schema/review.schema.json",
+  "title": "BFA review record",
+  "description": "Written only by the BFA review team (enforced by CODEOWNERS on registry/reviews/). A listing is routable only when its review status is reviewed or verified-provider AND manifest_sha256 matches the current manifest.",
   "type": "object",
   "additionalProperties": false,
   "required": ["id", "status", "manifest_sha256", "reviewer", "reviewed_at"],

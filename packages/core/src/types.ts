@@ -39,7 +39,7 @@ export type Category =
 
 export type ReviewStatus = "pending" | "reviewed" | "verified-provider" | "suspended" | "rejected";
 
-/** Written only by the Nen review team (registry/reviews/<provider>/<slug>.json). */
+/** Written only by the BFA review team (registry/reviews/<provider>/<slug>.json). */
 export interface Review {
   id: string;
   status: ReviewStatus;
@@ -90,7 +90,7 @@ export interface Quote {
  */
 export type ReceiptStatus = "paid_ok" | "paid_empty" | "paid_error" | "free_ok" | "unpaid_error" | "dry_run";
 
-/** One machine-readable receipt per call. Agents should store these; Nen appends them to a JSONL log. */
+/** One machine-readable receipt per call. Agents should store these; BFA appends them to a JSONL log. */
 export interface Receipt {
   receipt_version: 1;
   receipt_id: string;
@@ -115,10 +115,10 @@ export interface Receipt {
   /** Time spent creating the payment (deposit via NEAR MPC, or a local voucher), separate from the seller's work. */
   sign_ms?: number;
   started_at: string;
-  error?: NenErrorShape;
+  error?: BfaErrorShape;
 }
 
-export type NenErrorCode =
+export type BfaErrorCode =
   | "no_matching_listing"
   | "over_max_price"
   | "over_daily_budget"
@@ -132,8 +132,8 @@ export type NenErrorCode =
   | "top_up_needed";
 
 /** Every error tells the agent what to do next. */
-export interface NenErrorShape {
-  code: NenErrorCode;
+export interface BfaErrorShape {
+  code: BfaErrorCode;
   message: string;
   next_action: "retry" | "retry_after" | "use_fallback" | "raise_max_price" | "top_up" | "fix_input" | "stop";
   retry_after_s?: number;

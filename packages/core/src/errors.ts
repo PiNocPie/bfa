@@ -1,15 +1,15 @@
-import type { NenErrorCode, NenErrorShape } from "./types.js";
+import type { BfaErrorCode, BfaErrorShape } from "./types.js";
 
-export class NenError extends Error implements NenErrorShape {
-  readonly code: NenErrorCode;
-  readonly next_action: NenErrorShape["next_action"];
+export class BfaError extends Error implements BfaErrorShape {
+  readonly code: BfaErrorCode;
+  readonly next_action: BfaErrorShape["next_action"];
   readonly retry_after_s?: number;
   readonly fallback_listing_id?: string;
   readonly details?: Record<string, unknown>;
 
-  constructor(shape: NenErrorShape) {
+  constructor(shape: BfaErrorShape) {
     super(shape.message);
-    this.name = "NenError";
+    this.name = "BfaError";
     this.code = shape.code;
     this.next_action = shape.next_action;
     this.retry_after_s = shape.retry_after_s;
@@ -17,7 +17,7 @@ export class NenError extends Error implements NenErrorShape {
     this.details = shape.details;
   }
 
-  toJSON(): NenErrorShape {
+  toJSON(): BfaErrorShape {
     return {
       code: this.code,
       message: this.message,
@@ -29,8 +29,8 @@ export class NenError extends Error implements NenErrorShape {
   }
 }
 
-export function toErrorShape(err: unknown): NenErrorShape {
-  if (err instanceof NenError) return err.toJSON();
+export function toErrorShape(err: unknown): BfaErrorShape {
+  if (err instanceof BfaError) return err.toJSON();
   const message = err instanceof Error ? err.message : String(err);
   return { code: "provider_error", message, next_action: "use_fallback" };
 }

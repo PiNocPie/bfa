@@ -1,10 +1,10 @@
 # Competitor UX review: API marketplaces for AI agents
 
-Research date: 2026-11-03. Author: UI/UX research pass for Nen (NEAR hackathon, deadline 2026-11-14).
+Research date: 2026-11-03. Author: UI/UX research pass for BFA (NEAR hackathon, deadline 2026-11-14).
 
 **Method.** I read 23 public pages with the Monid `context.dev` markdown scraper, plus web search. I also used the Monid MCP server myself (free `discover` and `inspect`, paid `run`), which gave first-hand evidence of its agent UX. I did not call any private API, try to get past a login, or work around a block. Pages I could not reach are marked **[blocked]**. Claims I could not check are marked **[unverified]**. Numbers on competitor pages are what each site says about itself on the day I scraped it.
 
-**Fit with the current Nen repo.** The recommendations below reuse names already in `registry/schema/listing.schema.json`, `registry/schema/review.schema.json` and `packages/core/src/types.ts`: `charges_empty_results`, `payout.via = near-intents`, review `status` / `manifest_sha256` / `routable` / `not_routable_reason`, `Health`, `Quote.rationale` / `fallbacks`, `ReceiptStatus` (`paid_ok`, `paid_empty`, `paid_error`, ...), and `NenErrorShape.next_action`. Most of this report is about showing data Nen already models, not about inventing new data.
+**Fit with the current BFA repo.** The recommendations below reuse names already in `registry/schema/listing.schema.json`, `registry/schema/review.schema.json` and `packages/core/src/types.ts`: `charges_empty_results`, `payout.via = near-intents`, review `status` / `manifest_sha256` / `routable` / `not_routable_reason`, `Health`, `Quote.rationale` / `fallbacks`, `ReceiptStatus` (`paid_ok`, `paid_empty`, `paid_error`, ...), and `BfaErrorShape.next_action`. Most of this report is about showing data BFA already models, not about inventing new data.
 
 ---
 
@@ -12,9 +12,9 @@ Research date: 2026-11-03. Author: UI/UX research pass for Nen (NEAR hackathon, 
 
 1. **Show the exact price and the charge policy together, everywhere**: "$0.05 / call · empty result: free · error: free". Put it on catalog cards, the listing page, `inspect` and every receipt. (AIsa and Monid do this best. Nobody does it per seller.)
 2. **Make the review state public on each listing**: bot-check results, human review status, reviewer, date, and the `manifest_sha256` that was approved. If the live manifest no longer matches, flip the badge to "changed since review". No competitor shows any of this.
-3. **Onboarding is one paste with no private key**: an MCP URL plus a sign-in with a NEAR account and a daily cap, then one starter prompt. Competitors tell agents to put `AGENT_PRIVATE_KEY` / `YOUR_PRIVATE_KEY` in config files. Nen's Chain Signatures story is the visible difference.
+3. **Onboarding is one paste with no private key**: an MCP URL plus a sign-in with a NEAR account and a daily cap, then one starter prompt. Competitors tell agents to put `AGENT_PRIVATE_KEY` / `YOUR_PRIVATE_KEY` in config files. BFA's Chain Signatures story is the visible difference.
 4. **Receipts are first-class and linkable.** Every call returns JSON with quoted vs charged price, `status` (`paid_empty` etc.), the Base tx hash, the NEAR payer, latency and `output_valid`. The human spend page is just a view over those receipts.
-5. **The seller flow is a live checklist.** Paste the `nen.json` URL, see bot results row by row with fixes (as x402scan's failure table does), then follow a status timeline (bot → peer review → live) with a NEAR Intents payout chooser. Nothing goes public without an explicit submit.
+5. **The seller flow is a live checklist.** Paste the `bfa.json` URL, see bot results row by row with fixes (as x402scan's failure table does), then follow a status timeline (bot → peer review → live) with a NEAR Intents payout chooser. Nothing goes public without an explicit submit.
 
 ---
 
@@ -40,7 +40,7 @@ Research date: 2026-11-03. Author: UI/UX research pass for Nen (NEAR hackathon, 
 - Hero: "Give this to your agent: `$set up https://monid.ai/SKILL.md` and let it take it from there." Three ways to connect: Skill, MCP, CLI. "Start with $1 in free credit."
 - Its FAQ answers the questions an agent operator actually has: "A provider failed. Do I get charged? No. We only charge when the request actually delivers results"; "Most endpoints carry 0 Markup".
 - First-hand: `monid_discover` returned ranked results, each with `price {type: PER_CALL, amount: {value: 0.012, currency: USD}}`, `tags: ["verified","no-markup"]` and `metrics {status: stable, runTimeMs {p50, p95}}`. `monid_inspect` returned the input JSON Schema, price `notes` ("failed and blocked requests consume none. On x402 the quoted estimate is the price."), `docUrl`, and `hints` that are literal next-call templates. `monid_run` returned `billing.reportedCost` in micro-dollars, `billedUnits` and `resultCount`. **My two failed scrapes (bad hostname) were billed `0`**, which confirms the no-charge-on-failure claim. Tool descriptions tell the agent what to do on `BLOCKED` ("surface the reason to the user and ask them to act") and say "Before switching from a free endpoint to a paid alternative, obtain spending permission… Never switch automatically."
-- Seller onboarding: "Monid is open source. Contribute your tool to the project… Contribute on GitHub →". This is a PR-based model, close to Nen's.
+- Seller onboarding: "Monid is open source. Contribute your tool to the project… Contribute on GitHub →". This is a PR-based model, close to BFA's.
 - Visual: blue (#0016D7) and white, terminal-prompt motif, a wall of logo tiles.
 
 **AIsa**: https://aisa.one, https://aisa.one/connect.
@@ -48,7 +48,7 @@ Research date: 2026-11-03. Author: UI/UX research pass for Nen (NEAR hackathon, 
 - A mock bill: "get_person 1 result $0.010 · get_keyword 1 result $0.010 · get_listing no result $0.000 · Total $0.020 · No result, no charge". This is the clearest empty-result billing visual in the set.
 - "Reported, observed and estimated values are told apart"; "Fields only ever get added… Breaking changes ship as a new version".
 - Connect page: client picker ("Show all 30 clients"), three numbered steps per client, an "Add to Claude" deep link (`claude.ai/customize/connectors?...connectorUrl=https://mcp.aisa.one/mcp`), "Copy prompt" plus "Open ChatGPT with task" (a prompt-prefilled URL), and OAuth "No key to paste". It also publishes `index.md` alternates for agents.
-- Weak spots for Nen's purposes: AIsa picks the source, so there is no seller identity, no listing pages and no seller flow. Claims such as "250k+ agent users" come from the company itself.
+- Weak spots for BFA's purposes: AIsa picks the source, so there is no seller identity, no listing pages and no seller flow. Claims such as "250k+ agent users" come from the company itself.
 
 **x402 Bazaar (x402bazaar.org)**: https://www.x402bazaar.org, /register, /services.
 - The hero is split into "For Providers: Monetize any API in 2 min" and "For AI Agents: Any agent. Any API. Instant pay." A curl sample shows the price as a comment (`// 0.001 USDC`).
@@ -56,13 +56,13 @@ Research date: 2026-11-03. Author: UI/UX research pass for Nen (NEAR hackathon, 
 - Evidence for the anti-pattern: the scraped `/services` page showed only "Explore 100+ APIs … AllFree to tryFreeUnder $0.01New this week **0 services**". The homepage category tiles all said "0 APIs", and the traction block said "0 External providers earning revenue · $0 USDC". These are likely JS counters that had not hydrated, but crawlers and agents that read HTML see zeros. The hero also shows "Monthly revenue $24" and "0 txns on SKALE". The filter chips are good, though: "All / Free to try / Free / Under $0.01 / New this week".
 
 **402.com.tr ("x402 Bazaar — Pay-per-call API marketplace on Base & NEAR")**: https://402.com.tr, https://402.com.tr/agents.
-- **This is the closest overlap with Nen.** The /agents page describes "**Chain Signatures:** a NEAR account can control an EVM address and sign the x402 payment on Base directly… signed through the NEAR MPC signer". It also sells credit packs for "any asset NEAR Intents routes", and it ships 14 NEAR-native endpoints (near-account, near-transfer-preflight, near-swap-quote, …).
+- **This is the closest overlap with BFA.** The /agents page describes "**Chain Signatures:** a NEAR account can control an EVM address and sign the x402 payment on Base directly… signed through the NEAR MPC signer". It also sells credit packs for "any asset NEAR Intents routes", and it ships 14 NEAR-native endpoints (near-account, near-transfer-preflight, near-swap-quote, …).
 - Good for agents: "135 of them serve one free call a day if you ask for it with `?free=1`… without it you get the 402 challenge, which is deliberate so an unpaid probe always sees the price rather than an answer". There is an `x402 Ping` at $0.002 described as "the cheapest end-to-end x402 test", `x402-seller-check` (buyer-side check that "the URL is a well-formed 402 resource, does the price match, is the payTo sanctioned"), and the instruction "tell your agent to **bind these first**".
-- Weak: MCP setup offers `-e AGENT_PRIVATE_KEY=0x…`. The page is a single 229-card wall with emoji icons. I found no third-party seller flow, so it looks single-operator **[unverified]**. It also offers prepaid credits, which Nen's schema rules out (`pricing.model: per_call`, "no prepaid credits").
+- Weak: MCP setup offers `-e AGENT_PRIVATE_KEY=0x…`. The page is a single 229-card wall with emoji icons. I found no third-party seller flow, so it looks single-operator **[unverified]**. It also offers prepaid credits, which BFA's schema rules out (`pricing.model: per_call`, "no prepaid credits").
 
 **x402scan (Merit Systems)**: https://www.x402scan.com, /server/…, /resources/register, /discovery, /discovery/spec.
 - Homepage: ecosystem stats for the last 30 days ("Transactions 3.8M · Volume $1.53M · Buyers 32.86K · Sellers 13K"). The Featured Services table has columns `Server | Activity | Volume | Txns | Buyers | Latest | Chain | Try it`.
-- Server page: name, `v2` badge, "Try with AgentCash", resource count, tags, payTo addresses, 30-day activity, then a list of resources with `METHOD /path`, tag, `v2` and a price. Seller-written caveats show up verbatim in descriptions ("Known issue: openai.com resolves to wrong entity. x.com returns 404 — use twitter.com"). That is useful honesty that Nen could prompt for in a structured field.
+- Server page: name, `v2` badge, "Try with AgentCash", resource count, tags, payTo addresses, 30-day activity, then a list of resources with `METHOD /path`, tag, `v2` and a price. Seller-written caveats show up verbatim in descriptions ("Known issue: openai.com resolves to wrong entity. x.com returns 404 — use twitter.com"). That is useful honesty that BFA could prompt for in a structured field.
 - Register: a single `https://` input plus "Set up x402 with a prompt".
 - Discovery spec: OpenAPI at `/openapi.json` with `x-payment-info` (fixed or dynamic price), `info.x-guidance`, and a "Common Failure Reasons" table (`Not Found`, `Input/Output Schema Missing`, `No Payment Modes Detected`, `Expected 402, got 400`, `Malformed Runtime Amount`), each with cause and fix. There is a dry-run "Test your API… Nothing is registered." The copy-paste agent prompt has a hard **registration gate**: "Do NOT register until… The user has explicitly approved registering that specific origin."
 - Registered origins get a storefront page and a health-metrics page on tryponcho.com.
@@ -95,16 +95,16 @@ Research date: 2026-11-03. Author: UI/UX research pass for Nen (NEAR hackathon, 
 
 ### 3.1 Patterns to copy (best example in brackets)
 
-| # | Pattern | Best at | How Nen should apply it |
+| # | Pattern | Best at | How BFA should apply it |
 |---|---|---|---|
 | P1 | Charge policy next to the price, with a sample bill that includes a "no result $0.000" line | AIsa | Card and listing show `$0.05 / call` plus chips `empty: free` / `errors: free`, taken from `charges_empty_results`. Receipts show `paid_empty` rows explicitly. |
-| P2 | Every machine response carries next-call templates (`hints`) and the price notes | Monid | `nen_inspect` / `nen_quote` responses include `next: {tool, args}` and `charge_policy`. Errors already have `next_action`. |
+| P2 | Every machine response carries next-call templates (`hints`) and the price notes | Monid | `bfa_inspect` / `bfa_quote` responses include `next: {tool, args}` and `charge_policy`. Errors already have `next_action`. |
 | P3 | One-paste onboarding: skill URL or MCP URL plus OAuth, no key paste; a client picker; "copy prompt" | Monid, AIsa | `/agents` page with a client picker (Claude Code, Cursor, Codex, Claude.ai) and a NEAR sign-in instead of a key. |
-| P4 | `llms.txt` plus a `.md` twin for every page, announced at the top | Nansen | Every Nen page has a `.md` / `.json` twin, and the catalog itself is served as `catalog.json` and `llms.txt`. |
-| P5 | Unpaid probe always returns the 402 with price; cheap ping endpoint for testing the payment path | 402.com.tr | Ship a `nen/ping` listing at the lowest price for demo and agent self-test (near-native category). |
+| P4 | `llms.txt` plus a `.md` twin for every page, announced at the top | Nansen | Every BFA page has a `.md` / `.json` twin, and the catalog itself is served as `catalog.json` and `llms.txt`. |
+| P5 | Unpaid probe always returns the 402 with price; cheap ping endpoint for testing the payment path | 402.com.tr | Ship a `bfa/ping` listing at the lowest price for demo and agent self-test (near-native category). |
 | P6 | Seller failure table: error → cause → fix, plus a dry-run probe that registers nothing | x402scan | Listing bot output uses that exact format, rendered on the submission page and posted as a PR comment. |
-| P7 | Registration gate: the agent prompt must get explicit human approval before publishing | x402scan | "List with your coding agent" prompt that validates `nen.json` but stops before opening the PR. |
-| P8 | Multiple seller entry points (URL+price, OpenAPI import, …) | x402 Bazaar | MVP: paste manifest URL, or a form that generates `nen.json`. Nice-to-have: import from `/openapi.json` `x-payment-info`. |
+| P7 | Registration gate: the agent prompt must get explicit human approval before publishing | x402scan | "List with your coding agent" prompt that validates `bfa.json` but stops before opening the PR. |
+| P8 | Multiple seller entry points (URL+price, OpenAPI import, …) | x402 Bazaar | MVP: paste manifest URL, or a form that generates `bfa.json`. Nice-to-have: import from `/openapi.json` `x-payment-info`. |
 | P9 | Listing anatomy: stats tiles → what it does → what to send → what you get → **Limits** → reputation breakdown → reviews | NEAR AI Agent Market | Same skeleton with API-appropriate stats (success rate, p50, empty-paid rate from `Health`). |
 | P10 | Reputation as a transparent weighted formula, compared with the platform median | NEAR AI Agent Market | Show how `Quote.score` is computed ("success 0.97 × …"), and the `rationale` string the router already produces. |
 | P11 | Don't charge for broken endpoints (health check before 402; circuit breaker) | RelAI | Router refuses to pay when `Health.success_rate` is below a threshold and returns `use_fallback` with `fallback_listing_id`. Show "Paused: failing probes" on the listing. |
@@ -114,32 +114,32 @@ Research date: 2026-11-03. Author: UI/UX research pass for Nen (NEAR hackathon, 
 
 ### 3.2 Anti-patterns (with evidence)
 
-| # | Anti-pattern | Seen at | Nen rule |
+| # | Anti-pattern | Seen at | BFA rule |
 |---|---|---|---|
 | A1 | Catalog and stats rendered only client-side, so HTML readers see "0 services", "0 APIs", "$0" | x402bazaar.org (/services, homepage) | Server-render catalog and numbers. Agents and crawlers must read the same numbers people see. |
 | A2 | Animated counters that scrape as digit soup | Teneo ("0123456789…K+") | No animated counters. Show plain numbers with a "as of" timestamp. |
 | A3 | Vanity or contradictory stats (112 / 107 / 100+ APIs; "Monthly revenue $24" in the hero) | x402bazaar.org | Only show stats that come from receipts, and label the window ("last 7 d"). Hide a stat until it has meaningful volume. |
-| A4 | A private key in MCP env or sample code | 402.com.tr (`AGENT_PRIVATE_KEY`), Nansen (`YOUR_PRIVATE_KEY`), RelAI | Nen's onboarding never asks for a key. Say so on the page: "No private key. Your NEAR account signs via Chain Signatures." |
+| A4 | A private key in MCP env or sample code | 402.com.tr (`AGENT_PRIVATE_KEY`), Nansen (`YOUR_PRIVATE_KEY`), RelAI | BFA's onboarding never asks for a key. Say so on the page: "No private key. Your NEAR account signs via Chain Signatures." |
 | A5 | A "Verified" badge with no stated criteria | x402bazaar.org (featured providers), Monid (`verified` tag) | Every badge is clickable and opens the checklist that produced it, with date and reviewer. |
 | A6 | A listing marked "Offline" with no reason, since-when or alternative | Teneo (Nansen 2.3) | Show the status from `not_routable_reason`, plus a "since" time and the top fallback listing. |
 | A7 | Two products on one homepage (node rewards plus API access) | Teneo | One promise on the homepage: "Pay-per-call APIs for agents, settled on NEAR". |
 | A8 | Dead onboarding URLs | market.near.ai/skill.md (404) | CI link-check on `/llms.txt`, `/agents`, MCP URL and the snippet in the README. |
 | A9 | Wall of 200+ emoji cards with no filters above the fold | 402.com.tr | Filters first, then a dense table or list view with price aligned in its own column. |
 | A10 | Reviews from a single reviewer shown as social proof | NEAR AI Agent Market (page 1 of reviews: same reviewer ×5) | Don't show reviews in the MVP. Show the review *process* (who reviewed the listing, against what checklist). |
-| A11 | A gated seller "agents" site | agents.nansen.ai | All of Nen's catalog, listing, review status and receipt views are public and readable without an account (receipts are keyed by NEAR account, which is already public on chain). |
+| A11 | A gated seller "agents" site | agents.nansen.ai | All of BFA's catalog, listing, review status and receipt views are public and readable without an account (receipts are keyed by NEAR account, which is already public on chain). |
 
 ---
 
-## 4. Gaps no competitor fills that Nen can own
+## 4. Gaps no competitor fills that BFA can own
 
-1. **Public review status for each listing.** No competitor shows *human* review state. x402scan probes automatically, x402 Bazaar's "Verified" is undefined, and Monid's `verified` is unexplained. Nen already has `ReviewStatus = pending | reviewed | verified-provider | suspended | rejected` with `reviewer` and `reviewed_at`. Render it as a timeline on the listing and expose it in `nen_inspect`.
-2. **Manifest-hash verification.** The listing shows `sha256: 3f9a…c21e (approved by @reviewer on 2026-11-05)`. If the live `nen.json` hash ≠ the approved hash, the badge flips to **"Changed since review: not routable"**. This uses the existing `routable` / `not_routable_reason`. Receipts carry the hash, so an agent can prove which reviewed version it paid for. Nobody else ties a payment to a reviewed contract.
-3. **Empty-result billing per seller, declared and audited.** AIsa makes the promise for its own aggregated catalog; marketplaces leave it to seller prose (Teneo: "Charged ONLY on HTTP 200"). Nen has `charges_empty_results` in the manifest *and* `paid_empty` in receipts. Show "declared: empty is free" next to "observed: 0.4% of paid calls returned empty (`Health.empty_paid_rate`)". That "declared vs observed" pair is a signal no one else publishes.
-4. **Quote → charge reconciliation on every receipt.** No competitor shows the quoted price, the 402 amount and the settled amount side by side. Nen's bot already checks "price matches 402". Repeat that check on every call and put `quoted_usd` / `charged_usd` / `match: true` on the receipt.
-5. **Keyless agent payments as the default path.** 402.com.tr documents Chain Signatures as one option among private-key options. Nen should make it *the* onboarding: "Sign in with NEAR → set daily cap → done", and show the derived Base address and the cap on the spend page.
+1. **Public review status for each listing.** No competitor shows *human* review state. x402scan probes automatically, x402 Bazaar's "Verified" is undefined, and Monid's `verified` is unexplained. BFA already has `ReviewStatus = pending | reviewed | verified-provider | suspended | rejected` with `reviewer` and `reviewed_at`. Render it as a timeline on the listing and expose it in `bfa_inspect`.
+2. **Manifest-hash verification.** The listing shows `sha256: 3f9a…c21e (approved by @reviewer on 2026-11-05)`. If the live `bfa.json` hash ≠ the approved hash, the badge flips to **"Changed since review: not routable"**. This uses the existing `routable` / `not_routable_reason`. Receipts carry the hash, so an agent can prove which reviewed version it paid for. Nobody else ties a payment to a reviewed contract.
+3. **Empty-result billing per seller, declared and audited.** AIsa makes the promise for its own aggregated catalog; marketplaces leave it to seller prose (Teneo: "Charged ONLY on HTTP 200"). BFA has `charges_empty_results` in the manifest *and* `paid_empty` in receipts. Show "declared: empty is free" next to "observed: 0.4% of paid calls returned empty (`Health.empty_paid_rate`)". That "declared vs observed" pair is a signal no one else publishes.
+4. **Quote → charge reconciliation on every receipt.** No competitor shows the quoted price, the 402 amount and the settled amount side by side. BFA's bot already checks "price matches 402". Repeat that check on every call and put `quoted_usd` / `charged_usd` / `match: true` on the receipt.
+5. **Keyless agent payments as the default path.** 402.com.tr documents Chain Signatures as one option among private-key options. BFA should make it *the* onboarding: "Sign in with NEAR → set daily cap → done", and show the derived Base address and the cap on the spend page.
 6. **Seller payout chooser through NEAR Intents.** x402 Bazaar pays 95% in USDC on its chains. RelAI bridges Solana↔SKALE↔Base in its SDK. Nobody offers "get paid in *any* chain/token" as a step in listing. `payout.via = near-intents` with `chain` / `token` / `recipient` already exists, so make it a visual chooser in the list flow.
-7. **Persistent, public bot-check history.** x402scan's dry-run is one-off and private. Nen can publish the latest bot report (`bot_report_url`) on each listing ("last probe 14 min ago: 402 ok, price ok, schema ok") and keep re-probing. This doubles as uptime evidence.
-8. **A crypto-data shelf with NEAR-native endpoints.** Generalists (Monid 2,900 tools, AIsa 5,000 APIs) bury crypto data, and 402.com.tr is one operator. Nen's catalog can open on "Onchain data · Market data · NEAR-native" with Nansen as anchor seller.
+7. **Persistent, public bot-check history.** x402scan's dry-run is one-off and private. BFA can publish the latest bot report (`bot_report_url`) on each listing ("last probe 14 min ago: 402 ok, price ok, schema ok") and keep re-probing. This doubles as uptime evidence.
+8. **A crypto-data shelf with NEAR-native endpoints.** Generalists (Monid 2,900 tools, AIsa 5,000 APIs) bury crypto data, and 402.com.tr is one operator. BFA's catalog can open on "Onchain data · Market data · NEAR-native" with Nansen as anchor seller.
 
 ---
 
@@ -160,10 +160,10 @@ Research date: 2026-11-03. Author: UI/UX research pass for Nen (NEAR hackathon, 
 /r/{receipt_id}        Single receipt (human view of the JSON)             [M]
 /sellers/{provider}    Provider page, payouts summary                      [N]
 /.well-known/x402      Machine catalog (x402 convention)                   [N]
-/openapi.json, /mcp    Nen's own API + MCP server                          [M]
+/openapi.json, /mcp    BFA's own API + MCP server                          [M]
 ```
 
-Global header: `Nen | Catalog · For agents · List your API · Spend | [Sign in with NEAR]`. Footer: `llms.txt · OpenAPI · MCP · GitHub registry · Review policy`.
+Global header: `BFA | Catalog · For agents · List your API · Spend | [Sign in with NEAR]`. Footer: `llms.txt · OpenAPI · MCP · GitHub registry · Review policy`.
 
 ### 5.1 Catalog page `/` [M]
 
@@ -180,7 +180,7 @@ Global header: `Nen | Catalog · For agents · List your API · Spend | [Sign in
 │ Smart Money holdings       $0.05/call   empty free ·      99% ·    ✓ Rev.  │
 │ Nansen · onchain-data                   errors free       420ms   sha 3f9a │
 │ NEAR account check         $0.002/call  empty free        100% ·   ✓ Rev.  │
-│ nen · near-native                                         180ms           │
+│ bfa · near-native                                         180ms           │
 │ Token flows                $0.01/call   ⚠ empty charged   —        ◷ Pend. │
 │ …                                                                         │
 └───────────────────────────────────────────────────────────────────────────┘
@@ -188,7 +188,7 @@ Global header: `Nen | Catalog · For agents · List your API · Spend | [Sign in
 
 - Use a table or list, not a card wall (A9). Prices go in a monospace, right-aligned column with an explicit unit, and always come from `pricing.amount_usd`.
 - The STATUS column renders `ReviewStatus`. Pending listings are visible but greyed and labelled "not routable", so the bot→review pipeline is part of the demo story. **[M]**
-- "Charge policy" chips come from `charges_empty_results`. "Errors free" is a Nen platform rule; only show it if the router actually enforces it.
+- "Charge policy" chips come from `charges_empty_results`. "Errors free" is a BFA platform rule; only show it if the router actually enforces it.
 - HEALTH = `Health.success_rate` · `p50_ms`, shown as "—" until `samples ≥ 20` (A3). **[M if receipts exist by day 5, otherwise N]**
 - Sort options: Best match (router score), Price ↑, Most used 7 d **[N]**.
 - The same data ships as `/catalog.json` and `/llms.txt`, with a `<link rel="alternate">` pointing at them. **[M]**
@@ -205,7 +205,7 @@ Catalog / Onchain data / Smart Money holdings                    [.json] [.md]
 │ $0.05 / call │ Empty: FREE  │ Success 99%  │ p50 420 ms   │ Empty-paid    │
 │ USDC · Base  │ (declared)   │ last 7 d     │ last 7 d     │ 0.0% (observed)│
 ├──────────────┴──────────────┴──────────────┴──────────────┴───────────────┤
-│ [Use from your agent]  copy:  nen_run("nansen/smart-money-holdings", {...})│
+│ [Use from your agent]  copy:  bfa_run("nansen/smart-money-holdings", {...})│
 ├───────────────────────────────────────────────────────────────────────────┤
 │ What to send          example_input (copy)    │ input_schema (collapsible) │
 │ What you get back     example output / output_schema (collapsible)         │
@@ -217,7 +217,7 @@ Catalog / Onchain data / Smart Money holdings                    [.json] [.md]
 │  Bot check · 14 min ago      ✓ 402 returned  ✓ price $0.05 = manifest       │
 │                              ✓ schema valid  ✓ paid test call: output valid │
 │  Timeline  submitted 11-04 → bot passed 11-04 → reviewed 11-05 (@alice)    │
-│  Manifest  sha256 3f9a…c21e  = approved hash ✓   [view nen.json on GitHub] │
+│  Manifest  sha256 3f9a…c21e  = approved hash ✓   [view bfa.json on GitHub] │
 ├───────────────────────────────────────────────────────────────────────────┤
 │ Recent calls (public receipts)  rcpt_…  paid_ok  $0.05  412ms  2m ago  →   │  [N]
 └───────────────────────────────────────────────────────────────────────────┘
@@ -235,8 +235,8 @@ Step 1, choose an entry (x402 Bazaar-style chooser, trimmed for MVP):
 
 ```
 How do you want to list?
-( ) Paste a nen.json URL or file          ← [M]
-( ) Fill a form → we generate nen.json    ← [M if time, simple form over listing.schema.json]
+( ) Paste a bfa.json URL or file          ← [M]
+( ) Fill a form → we generate bfa.json    ← [M if time, simple form over listing.schema.json]
 ( ) Import from /openapi.json (x-payment-info) ← [N]
 ( ) List with your coding agent: [Copy prompt]  (validates, then STOPS for your approval) ← [M, it's just text]
 ```
@@ -352,15 +352,15 @@ Layout, AIsa/Monid style: client picker tabs `[Claude Code] [Cursor] [Codex] [Cl
 Step 1, add the server. The URL is a placeholder until deployed:
 
 ```bash
-claude mcp add --transport http nen https://<nen-host>/mcp
+claude mcp add --transport http bfa https://<bfa-host>/mcp
 ```
 
 ```json
 {
   "mcpServers": {
-    "nen": {
+    "bfa": {
       "type": "http",
-      "url": "https://<nen-host>/mcp"
+      "url": "https://<bfa-host>/mcp"
     }
   }
 }
@@ -370,26 +370,26 @@ Step 2, sign in with NEAR (OAuth-style, as with Monid and AIsa), choose a daily 
 
 Step 3, the copy-paste starter prompt (one button; also a "copy for agent" version in `/llms.txt`):
 
-> Use the Nen MCP server. Find an endpoint that returns current Smart Money token holdings on Ethereum. Inspect it and tell me its price, whether empty results are charged, and its review status before calling. Call it only if it is under $0.10, and stay under my daily cap. Then show me the top 5 tokens and the receipt ID.
+> Use the BFA MCP server. Find an endpoint that returns current Smart Money token holdings on Ethereum. Inspect it and tell me its price, whether empty results are charged, and its review status before calling. Call it only if it is under $0.10, and stay under my daily cap. Then show me the top 5 tokens and the receipt ID.
 
 MCP tools to list on the page. Names are a suggestion; align them with `packages/mcp-server`.
 
 | Tool | Returns | Copies |
 |---|---|---|
-| `nen_discover(query, max_price_usd?, category?)` | ranked listings with price, charge policy, review status, `rationale` | Monid discover |
-| `nen_inspect(listing_id)` | schemas, example_input, limits, manifest hash, bot report, `next` call template | Monid inspect `hints` |
-| `nen_quote(listing_id, input)` | `Quote` with price, `fallbacks`, `score`, `rationale` | Nen-specific |
-| `nen_run(listing_id, input, max_price_usd, idempotency_key)` | data + `receipt` | |
-| `nen_receipts(since?)` / `nen_balance()` | receipts, spent today vs cap | Monid balance |
+| `bfa_discover(query, max_price_usd?, category?)` | ranked listings with price, charge policy, review status, `rationale` | Monid discover |
+| `bfa_inspect(listing_id)` | schemas, example_input, limits, manifest hash, bot report, `next` call template | Monid inspect `hints` |
+| `bfa_quote(listing_id, input)` | `Quote` with price, `fallbacks`, `score`, `rationale` | BFA-specific |
+| `bfa_run(listing_id, input, max_price_usd, idempotency_key)` | data + `receipt` | |
+| `bfa_receipts(since?)` / `bfa_balance()` | receipts, spent today vs cap | Monid balance |
 
-Every error uses the existing `NenErrorShape`. Show the full list on `/agents` so agents and humans see the same contract. Example:
+Every error uses the existing `BfaErrorShape`. Show the full list on `/agents` so agents and humans see the same contract. Example:
 
 ```json
 { "code": "over_daily_budget", "message": "paying $0.05 would exceed the daily cap of $2.00 (spent $1.98 today)",
   "next_action": "stop", "details": { "spent_today_usd": "1.98", "daily_cap_usd": "2.00" } }
 ```
 
-Suggested additions to `NenErrorCode`, so every situation competitors document has a typed code: `listing_changed_since_review` (next_action `use_fallback`), `quote_mismatch` (402 amount ≠ manifest; `stop`), `provider_unhealthy` (RelAI-style "don't pay a failing endpoint"; `use_fallback`). Also make it explicit for every code whether money moved (`charged: false`). Monid and Nansen both document "not charged on X", and agents need it per error.
+Suggested additions to `BfaErrorCode`, so every situation competitors document has a typed code: `listing_changed_since_review` (next_action `use_fallback`), `quote_mismatch` (402 amount ≠ manifest; `stop`), `provider_unhealthy` (RelAI-style "don't pay a failing endpoint"; `use_fallback`). Also make it explicit for every code whether money moved (`charged: false`). Monid and Nansen both document "not charged on X", and agents need it per error.
 
 ### 5.7 Suggested 8-day cut (2 people)
 
@@ -398,7 +398,7 @@ Suggested additions to `NenErrorCode`, so every situation competitors document h
 | 1–2 | SSR catalog + listing detail from `registry/` (incl. `.json` / `.md` twins, status line, charge chips) | Listing-bot check rows as JSON + PR comment; manifest hash vs review hash |
 | 3–4 | `/list` (paste URL / form → GitHub new-file link), `/submissions/{id}` timeline, payout chooser UI | MCP tools discover / inspect / run; typed errors; receipts with `manifest_sha256`, `quoted_usd` / `charged_usd` |
 | 5–6 | `/spend/{account}` + `/r/{id}`; `/review` read-only queue with checklist + PR deep link | Health from receipts and probes; `/catalog.json`, `/llms.txt`, `/openapi.json` |
-| 7 | `/agents` page with client tabs + prompt; link-check CI (A8) | `nen/ping` listing; end-to-end demo: NEAR account → Base payment → receipt |
+| 7 | `/agents` page with client tabs + prompt; link-check CI (A8) | `bfa/ping` listing; end-to-end demo: NEAR account → Base payment → receipt |
 | 8 | Polish, empty/error states, mobile | Buffer and demo script |
 
 Visual direction: a dense explorer-style table (x402scan) on a calm light/dark theme. Monospace for prices, hashes and IDs. Status colours used only for state (green routable, amber pending/changed, red suspended or policy breach). No emoji icons, no animated counters, no logo walls until there are real sellers.
@@ -429,4 +429,4 @@ From web search only (not scraped; details unverified):
 - Monid third-party profile: https://providers.apievangelist.com/providers/monid/
 - x402scan as an indexer (third-party description): https://pkg.go.dev/github.com/ObolNetwork/obol-stack/internal/x402scan
 
-Nen repo files read for alignment: `registry/schema/listing.schema.json`, `registry/schema/review.schema.json`, `registry/listings/nansen/smart-money-holdings.json`, `packages/core/src/types.ts`, `packages/core/src/errors.ts`, `packages/core/src/receipts.ts`.
+BFA repo files read for alignment: `registry/schema/listing.schema.json`, `registry/schema/review.schema.json`, `registry/listings/nansen/smart-money-holdings.json`, `packages/core/src/types.ts`, `packages/core/src/errors.ts`, `packages/core/src/receipts.ts`.

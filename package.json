@@ -1,8 +1,8 @@
 {
-  "name": "nen-near",
+  "name": "bfa",
   "private": true,
   "version": "0.1.0",
-  "description": "Nen: open API market for AI agents. Pay-per-call over x402, settled on NEAR.",
+  "description": "BFA: open API market for AI agents. Pay-per-call over x402, settled on NEAR.",
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@10.28.0",

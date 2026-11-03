@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { NenError } from "./errors.js";
+import { BfaError } from "./errors.js";
 import { microsToUsd, usdToMicros, type Micros } from "./money.js";
 import type { Receipt } from "./types.js";
 
@@ -55,7 +55,7 @@ export async function assertWithinDailyBudget(log: ReceiptLog, priceUsd: string,
   const cap = usdToMicros(dailyCapUsd);
   const price = usdToMicros(priceUsd);
   if (spent + price > cap) {
-    throw new NenError({
+    throw new BfaError({
       code: "over_daily_budget",
       message: `paying $${priceUsd} would exceed the daily cap of $${dailyCapUsd} (spent $${microsToUsd(spent)} today)`,
       next_action: "stop",

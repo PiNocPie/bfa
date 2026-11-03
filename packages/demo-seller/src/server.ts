@@ -1,9 +1,9 @@
-// Nen demo seller: a real NEAR-native endpoint sold per call over x402 V2 on Base Sepolia.
+// BFA demo seller: a real NEAR-native endpoint sold per call over x402 V2 on Base Sepolia.
 // Accepts both `exact` (one transfer per call) and `batch-settlement` (vouchers against a channel deposit).
 //
 //   SELLER_PAY_TO=0x... node dist/server.js
 //   curl -i -X POST localhost:8402/near/account -H 'content-type: application/json' -d '{"account_id":"nen-testnet.testnet"}'
-//   -> 402 with PAYMENT-REQUIRED; pay with @nen-near/x402-client.
+//   -> 402 with PAYMENT-REQUIRED; pay with @bfa/x402-client.
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { serve } from "@hono/node-server";
@@ -35,7 +35,7 @@ async function viewAccount(accountId: string): Promise<{ result?: Record<string,
         signal: AbortSignal.timeout(Number(process.env.NEAR_RPC_TIMEOUT_MS ?? 15000)),
         body: JSON.stringify({
           jsonrpc: "2.0",
-          id: "nen",
+          id: "bfa",
           method: "query",
           params: { request_type: "view_account", finality: "final", account_id: accountId },
         }),
@@ -55,7 +55,7 @@ if (!payTo || !/^0x[0-9a-fA-F]{40}$/.test(payTo)) {
 
 // State dir (gitignored): the receiver-authorizer key and batch-settlement channel state.
 // The authorizer key only co-signs voucher claims/refunds; settled USDC always goes to `payTo`.
-const STATE_DIR = process.env.NEN_SELLER_STATE_DIR ?? ".nen-seller";
+const STATE_DIR = process.env.BFA_SELLER_STATE_DIR ?? ".bfa-seller";
 async function loadOrCreateKey(file: string): Promise<`0x${string}`> {
   try {
     return (await readFile(file, "utf8")).trim() as `0x${string}`;
@@ -84,7 +84,7 @@ const app = new Hono();
 
 app.get("/", (c) =>
   c.json({
-    name: "Nen demo seller",
+    name: "BFA demo seller",
     endpoints: [{ method: "POST", path: "/near/account", price_usd: "0.001", network: NETWORK, schemes: ["batch-settlement", "exact"] }],
   }),
 );
@@ -129,5 +129,5 @@ app.post("/near/account", async (c) => {
 });
 
 serve({ fetch: app.fetch, port: PORT }, (info) => {
-  console.log(JSON.stringify({ msg: "nen demo seller listening", port: info.port, network: NETWORK, payTo }));
+  console.log(JSON.stringify({ msg: "bfa demo seller listening", port: info.port, network: NETWORK, payTo }));
 });

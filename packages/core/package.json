@@ -1,7 +1,7 @@
 {
-  "name": "@nen-near/core",
+  "name": "@bfa/core",
   "version": "0.1.0",
-  "description": "Nen registry, router and receipts: pick the best x402 provider for an agent's task.",
+  "description": "BFA registry, router and receipts: pick the best x402 provider for an agent's task.",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
