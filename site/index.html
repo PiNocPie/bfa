@@ -1,0 +1,507 @@
+<title>Nen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column ledger. Hero = a real agent transcript printed like a receipt; below it the catalog table, agent setup, receipts and the seller checklist. */
+:root{
+  --paper:#f5f6f8; --sheet:#ffffff; --ink:#141a2e; --muted:#5b6378; --rule:#dde1ea;
+  --accent:#2f3fd0; --accent-soft:#e6e9fb;
+  --ok:#11795a; --ok-soft:#e1f3ec; --warn:#9a5a00; --warn-soft:#fbefd9; --bad:#b4232f; --bad-soft:#fbe5e7;
+  --code:#eef0f5;
+  --f-display:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0f1220; --sheet:#171b2d; --ink:#e7e9f2; --muted:#9aa1b8; --rule:#2a3048;
+  --accent:#8f9bff; --accent-soft:#232a52;
+  --ok:#4fd1a1; --ok-soft:#123629; --warn:#f2b35b; --warn-soft:#3a2a10; --bad:#ff8790; --bad-soft:#3d1a20;
+  --code:#1e2338; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f1220; --sheet:#171b2d; --ink:#e7e9f2; --muted:#9aa1b8; --rule:#2a3048;
+  --accent:#8f9bff; --accent-soft:#232a52;
+  --ok:#4fd1a1; --ok-soft:#123629; --warn:#f2b35b; --warn-soft:#3a2a10; --bad:#ff8790; --bad-soft:#3d1a20;
+  --code:#1e2338; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:400 15px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent);text-underline-offset:2px}
+a:focus-visible,button:focus-visible,input:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h2{font-size:1.6rem;font-weight:800}
+h3{font-size:1.05rem;font-weight:700}
+p{margin:0}
+.mono,code,pre{font-family:var(--f-mono);font-size:.86em}
+.num{font-variant-numeric:tabular-nums}
+.eyebrow{font:500 .72rem/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* header */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
+header.top .wrap{display:flex;align-items:center;gap:20px;padding-block:12px;flex-wrap:wrap}
+.logo{font:800 1.35rem/1 var(--f-display);color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo .mark{width:22px;height:22px;border-radius:6px;background:var(--accent);display:grid;place-items:center;color:var(--sheet);font-size:.8rem}
+nav.links{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem}
+nav.links a{color:var(--muted);text-decoration:none}
+nav.links a:hover{color:var(--ink)}
+.net{margin-left:auto;font:500 .72rem/1 var(--f-mono);padding:6px 9px;border-radius:999px;background:var(--warn-soft);color:var(--warn);white-space:nowrap}
+
+section{padding-block:56px;border-bottom:1px solid var(--rule)}
+section:last-of-type{border-bottom:0}
+.sec-head{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;max-width:68ch}
+.sec-head p{color:var(--muted)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:40px;align-items:start;padding-block:56px 48px}
+.hero h1{font-size:clamp(2.1rem,4.6vw,3.4rem);font-weight:800;line-height:1.05}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .lede{font-size:1.08rem;color:var(--muted);max-width:52ch;margin-top:18px}
+.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.btn{font:600 .92rem/1 var(--f-body);padding:12px 16px;border-radius:8px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer;text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--sheet)}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:34px;border-top:1px solid var(--rule)}
+.facts div{padding:14px 14px 0 0}
+.facts b{display:block;font:700 1.5rem/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.facts span{font-size:.82rem;color:var(--muted)}
+
+.receipt{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;box-shadow:0 18px 40px -24px rgba(20,26,46,.35);position:relative;min-width:0}
+.receipt::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:radial-gradient(circle at 6px 0,transparent 6px,var(--sheet) 6.5px) -6px 0/12px 8px repeat-x}
+.receipt .rh{display:flex;justify-content:space-between;gap:8px;padding:12px 16px;border-bottom:1px dashed var(--rule);font:500 .72rem/1.3 var(--f-mono);color:var(--muted)}
+.transcript{list-style:none;margin:0;padding:6px 0 10px;font:400 .8rem/1.5 var(--f-mono)}
+.transcript li{display:grid;grid-template-columns:5.6rem minmax(0,1fr) auto;gap:10px;padding:7px 16px;align-items:baseline}
+.transcript li+li{border-top:1px dotted var(--rule)}
+.transcript .tool{color:var(--accent);font-weight:500}
+.transcript .out{color:var(--ink);overflow-wrap:anywhere}
+.transcript .t{color:var(--muted);white-space:nowrap}
+.receipt .rf{padding:10px 16px 16px;border-top:1px dashed var(--rule);font:400 .74rem/1.5 var(--f-mono);color:var(--muted)}
+
+/* pills */
+.pill{display:inline-flex;align-items:center;gap:6px;font:500 .74rem/1 var(--f-mono);padding:5px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.plain{background:var(--code);color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+
+/* catalog */
+.tools-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.search{flex:1 1 260px;min-width:0;font:400 .95rem var(--f-body);padding:11px 13px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink)}
+.chip{font:500 .8rem/1 var(--f-body);padding:8px 11px;border-radius:999px;border:1px solid var(--rule);background:var(--sheet);color:var(--muted);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.table-box{overflow-x:auto;background:var(--sheet);border:1px solid var(--rule);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:720px}
+th{font:500 .7rem/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:12px 14px;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:14px;border-bottom:1px solid var(--rule);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.price{font-family:var(--f-mono);text-align:right;white-space:nowrap}
+th.r{text-align:right}
+tr.row{cursor:pointer}
+tr.row:hover td{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
+tr.row.dim .name{color:var(--muted)}
+.name{font-weight:600}
+.sub{font-size:.82rem;color:var(--muted)}
+.caret{display:inline-block;transition:transform .15s;color:var(--muted)}
+tr.row[aria-expanded="true"] .caret{transform:rotate(90deg)}
+tr.detail td{background:var(--paper);padding:0}
+.empty{padding:24px;color:var(--muted);text-align:center}
+
+/* listing detail */
+.detail-in{padding:22px;display:flex;flex-direction:column;gap:20px}
+.status-line{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:.88rem}
+.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--rule);border-radius:8px;background:var(--sheet)}
+.tiles div{padding:12px 14px;min-width:0}
+.tiles div+div{border-left:1px solid var(--rule)}
+.tiles b{display:block;font:700 1.05rem/1.2 var(--f-display);font-variant-numeric:tabular-nums}
+.tiles span{font-size:.76rem;color:var(--muted)}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.block{display:flex;flex-direction:column;gap:8px;min-width:0}
+pre{margin:0;background:var(--code);border-radius:8px;padding:12px 14px;overflow-x:auto;line-height:1.5;color:var(--ink)}
+dl.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;margin:0;font-size:.88rem}
+dl.kv dt{color:var(--muted)}
+dl.kv dd{margin:0;overflow-wrap:anywhere}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:.86rem}
+.checks li{display:grid;grid-template-columns:1.3rem 9.5rem minmax(0,1fr);gap:8px;align-items:baseline}
+.checks .ic{font-family:var(--f-mono);font-weight:500}
+.checks .ic.y{color:var(--ok)} .checks .ic.n{color:var(--bad)}
+.checks .id{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.checks .fix{display:block;color:var(--bad);font-size:.8rem}
+
+/* agents */
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.codecard{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;overflow:hidden;min-width:0}
+.codecard .bar{display:flex;justify-content:space-between;align-items:center;padding:8px 10px 8px 14px;border-bottom:1px solid var(--rule)}
+.codecard pre{border-radius:0;background:transparent;font-size:.8rem}
+.copy{font:500 .76rem/1 var(--f-body);padding:7px 10px;border-radius:6px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.toollist{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+.toollist li{display:grid;grid-template-columns:8.5rem 3.6rem minmax(0,1fr);gap:10px;padding:10px 0;border-bottom:1px solid var(--rule);font-size:.9rem;align-items:baseline}
+.toollist code{color:var(--accent);font-weight:500}
+.paid{font:500 .7rem/1 var(--f-mono);text-transform:uppercase;letter-spacing:.06em}
+.paid.y{color:var(--warn)} .paid.n{color:var(--muted)}
+.note{font-size:.86rem;color:var(--muted);margin-top:14px}
+
+/* receipts */
+.why{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:22px}
+.why div{border-top:2px solid var(--ink);padding-top:10px}
+.why b{font:700 1rem/1.3 var(--f-display);display:block;margin-bottom:4px}
+.why p{font-size:.88rem;color:var(--muted)}
+td.mono{font-size:.8rem;white-space:nowrap}
+
+/* list */
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;counter-reset:s}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px;font-size:.9rem;color:var(--muted)}
+.steps li::before{content:counter(s);font:800 1.6rem/1 var(--f-display);color:var(--accent)}
+.steps b{color:var(--ink);font-weight:600}
+.botcard{margin-top:26px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px}
+
+footer{padding-block:28px 40px;font-size:.84rem;color:var(--muted)}
+footer .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+
+@media (max-width:860px){
+  .hero,.split,.cols{grid-template-columns:minmax(0,1fr)}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tiles div+div{border-left:0}
+  .tiles div{border-top:1px solid var(--rule)}
+  .tiles div:nth-child(-n+2){border-top:0}
+  .tiles div:nth-child(even){border-left:1px solid var(--rule)}
+  .why,.steps{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+}
+@media (max-width:520px){
+  .facts{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .why,.steps{grid-template-columns:minmax(0,1fr)}
+  .transcript li{grid-template-columns:4.6rem minmax(0,1fr)}
+  .transcript .t{grid-column:2}
+  .checks li{grid-template-columns:1.3rem minmax(0,1fr)}
+  .checks .id{grid-column:2}
+  .checks li>span:last-child{grid-column:2}
+  .toollist li{grid-template-columns:7.5rem minmax(0,1fr)}
+  .toollist li>span:last-child{grid-column:1/-1}
+  nav.links{order:3;width:100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#top" data-jump="top"><span class="mark">N</span>Nen</a>
+    <nav class="links" aria-label="Sections">
+      <a href="#catalog" data-jump="catalog">Catalog</a>
+      <a href="#agents" data-jump="agents">For agents</a>
+      <a href="#receipts" data-jump="receipts">Receipts</a>
+      <a href="#list-api" data-jump="list-api">List your API</a>
+      <a href="https://github.com/PiNocPie/nen">GitHub</a>
+    </nav>
+    <span class="net">NEAR testnet · Base Sepolia</span>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <p class="eyebrow">Open API market for AI agents</p>
+        <h1 style="margin-top:14px">Your agent pays per call. <em>Its NEAR account signs.</em></h1>
+        <p class="lede">Agents find an API, read the exact price, pay for one call over x402 and get a receipt. The paying address belongs to the agent's NEAR account through Chain Signatures, so no private key goes in the config. Anyone can list an API; the Nen team reviews it before it routes.</p>
+        <div class="cta">
+          <button class="btn primary" data-jump="agents">Connect your agent</button>
+          <button class="btn" data-jump="list-api">List your API</button>
+        </div>
+        <div class="facts">
+          <div><b class="num">22</b><span>paid calls on testnet</span></div>
+          <div><b class="num">$0.022</b><span>total spent, USDC</span></div>
+          <div><b class="num">$0</b><span>charged for 7 failed calls</span></div>
+        </div>
+      </div>
+
+      <figure class="receipt" style="margin:0" aria-label="Transcript of a real agent session">
+        <div class="rh"><span>agent session · MCP over stdio</span><span>2026-11-03 18:14 UTC</span></div>
+        <ol class="transcript">
+          <li><span class="tool">discover</span><span class="out">"near account balance" → nen/near-account, $0.001</span><span class="t">free</span></li>
+          <li><span class="tool">inspect</span><span class="out">$0.001 / call · empty result: free · error: free · reviewed, manifest unchanged</span><span class="t">free</span></li>
+          <li><span class="tool">quote</span><span class="out">best: nen/near-account</span><span class="t">free</span></li>
+          <li><span class="tool">run</span><span class="out">{"account": "oops"} → invalid_input, fix_input. Nothing paid.</span><span class="t">$0</span></li>
+          <li><span class="tool">run</span><span class="out">nansen/smart-money-holdings → listing_not_routable (pending review)</span><span class="t">$0</span></li>
+          <li><span class="tool">run</span><span class="out">paid_ok · batch-settlement · exists: true</span><span class="t num">300 ms</span></li>
+          <li><span class="tool">run</span><span class="out">same idempotency key → same receipt, replayed</span><span class="t">$0</span></li>
+          <li><span class="tool">wallet</span><span class="out">0xcB9f…21cA, controlled by NEAR Chain Signatures (nen-testnet.testnet) · 19.97 USDC</span><span class="t">free</span></li>
+        </ol>
+        <div class="rf">Recorded from <span>packages/mcp-server/scripts/smoke.mjs</span> against the live testnet. Spent today: $0.022 of a $0.10 cap.</div>
+      </figure>
+    </div>
+  </div>
+
+  <section id="catalog">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Catalog</p>
+        <h2>Every price, policy and review in plain view</h2>
+        <p>Listings come from <span class="mono">registry/</span> on GitHub. A listing routes only when a reviewer approved it and its manifest hash still matches the approved one. Select a row to see the full listing.</p>
+      </div>
+      <div class="tools-row">
+        <input class="search" id="q" type="search" placeholder="Search, e.g. smart money holdings" aria-label="Search listings">
+        <button class="chip" data-cat="all" aria-pressed="true">All</button>
+        <button class="chip" data-cat="near-native" aria-pressed="false">NEAR-native</button>
+        <button class="chip" data-cat="onchain-data" aria-pressed="false">Onchain data</button>
+        <button class="chip" id="live" aria-pressed="false">Routable only</button>
+      </div>
+      <div class="table-box">
+        <table>
+          <thead><tr><th>Name / provider</th><th class="r">Price</th><th>Charge policy</th><th>Health</th><th>Status</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="agents">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">For agents</p>
+        <h2>One MCP server, seven tools, no EVM key</h2>
+        <p>Add Nen to Claude Code or any MCP client. The only secret is a NEAR access key, kept in your environment. It asks the NEAR MPC network to sign, and never touches a Base private key.</p>
+      </div>
+      <div class="split">
+        <div class="codecard">
+          <div class="bar"><span class="eyebrow">.mcp.json</span><button class="copy" data-copy="mcp">Copy</button></div>
+<pre id="mcp">{
+  "mcpServers": {
+    "nen": {
+      "command": "node",
+      "args": ["/path/to/nen/packages/mcp-server/dist/index.js"],
+      "env": {
+        "NEAR_NETWORK": "testnet",
+        "NEAR_ACCOUNT_ID": "&lt;name&gt;.testnet",
+        "NEAR_PRIVATE_KEY": "${NEAR_PRIVATE_KEY}",
+        "NEN_DAILY_CAP_USD": "1"
+      }
+    }
+  }
+}</pre>
+        </div>
+        <div>
+          <ul class="toollist">
+            <li><code>discover</code><span class="paid n">free</span><span>Find reviewed APIs by query, with price and networks.</span></li>
+            <li><code>inspect</code><span class="paid n">free</span><span>Schemas, example input, price line, review status and manifest hash.</span></li>
+            <li><code>quote</code><span class="paid n">free</span><span>Best listing plus fallbacks: 45% success, 25% price, 20% latency, 10% billing.</span></li>
+            <li><code>run</code><span class="paid y">pays</span><span>Validates input, pays at most the listed price, returns data and a receipt.</span></li>
+            <li><code>receipts</code><span class="paid n">free</span><span>Recent receipts and today's spend against the cap.</span></li>
+            <li><code>wallet</code><span class="paid n">free</span><span>NEAR account, derived Base address, session key, USDC balance.</span></li>
+            <li><code>submit_listing</code><span class="paid n">free</span><span>Seller dry run: schema check and an unpaid probe of the 402.</span></li>
+          </ul>
+          <p class="note">Errors come back as JSON with a <span class="mono">code</span> and a <span class="mono">next_action</span> (retry, use_fallback, fix_input, top_up, stop…), so the agent knows what to do next.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="receipts">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Receipts</p>
+        <h2>One NEAR signature opens a channel, then calls take 200 ms</h2>
+        <p>A Chain Signatures request takes seconds, which is too slow for every call. So the NEAR account signs one capped deposit into an x402 batch-settlement channel, and a local session key signs a voucher for each call after that.</p>
+      </div>
+      <div class="why">
+        <div><b>Deposit, signed on NEAR</b><p>About 7 s through the MPC contract <span class="mono">v1.signer-prod.testnet</span>. Capped at $0.50 by default.</p></div>
+        <div><b>Each call, a voucher</b><p>Signed locally in 2–19 ms. The whole paid call takes about 200–300 ms.</p></div>
+        <div><b>Unused deposit comes back</b><p>The channel can be refunded. A failed call is never charged.</p></div>
+      </div>
+      <div class="table-box">
+        <table>
+          <thead><tr><th>Time (UTC)</th><th>Receipt</th><th>Status</th><th class="r">Charged</th><th class="r">Sign</th><th class="r">Latency</th><th>Settlement</th></tr></thead>
+          <tbody id="rcpts"></tbody>
+        </table>
+      </div>
+      <p class="note">Most recent 12 receipts from payer <a href="https://sepolia.basescan.org/address/0xcB9fFe1087b5442ceEf609361CE633B1795C21cA">0xcB9f…21cA</a> on Base Sepolia. Rows that show a transaction are channel deposits signed by NEAR Chain Signatures.</p>
+    </div>
+  </section>
+
+  <section id="list-api">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">List your API</p>
+        <h2>Open to anyone, routed after review</h2>
+        <p>Listing is free and Nen takes no fee. Agents pay your address directly.</p>
+      </div>
+      <ol class="steps">
+        <li><b>Serve x402 V2</b>Put any @x402 middleware in front of your endpoint.</li>
+        <li><b>Write nen.json</b>Price, schemas, networks and data license, per the listing schema.</li>
+        <li><b>Run the bot</b>submit_listing probes your 402 and lists anything to fix.</li>
+        <li><b>Get reviewed</b>A reviewer pins your manifest's sha256. Edits pause routing until re-review.</li>
+      </ol>
+      <div class="botcard">
+        <div class="status-line"><h3>Bot report · nen/near-account</h3><span class="pill bad"><span class="dot"></span>7 of 8 passed</span></div>
+        <ul class="checks" id="botchecks"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Nen is open source under MIT. Testnet only: no mainnet funds move yet.</span>
+    <span><a href="https://github.com/PiNocPie/nen">GitHub</a> · <a href="https://github.com/PiNocPie/nen/blob/main/llms.txt">llms.txt</a> · <a href="https://github.com/PiNocPie/nen/tree/main/registry/schema">Listing schema</a></span>
+  </div>
+</footer>
+
+<script>
+const SHA_NEN = "7b787028863654a22db6cfefeb233346d7ebdb38074ac8edd94d4491fd7deff0";
+const SHA_NANSEN = "5b7abbbbf3709194d350535ff6e34bbc6dfcc767a68e8512fc552d1df1e3c3d2";
+const BOT = [
+  ["reachable", true, "HTTP 402 from POST /near/account"],
+  ["returns_402", true, "unpaid request gets 402 Payment Required"],
+  ["x402_v2", true, "x402Version 2, 2 payment options"],
+  ["networks_match", true, "every manifest network is offered"],
+  ["schemes_match", true, "offers batch-settlement, exact"],
+  ["price_matches", true, "402 price equals manifest price $0.001"],
+  ["pay_to", true, "payTo 0x11f4…4aa3"],
+  ["public_https", false, "localhost endpoint", "Public listings must use a public https URL."]
+];
+const LISTINGS = [
+  {
+    id: "nen/near-account", name: "NEAR testnet account state", provider: "Nen demo seller", cat: "near-native",
+    desc: "Balance, locked balance, storage bytes and contract flag for one NEAR testnet account id.",
+    price: "0.001", network: "eip155:84532 (Base Sepolia)", schemes: "batch-settlement, exact", emptyFree: true,
+    routable: true, status: ["ok", "Reviewed"], reviewer: "nen-team", reviewedAt: "2026-11-03", sha: SHA_NEN, approved: SHA_NEN,
+    health: { rate: "76%", n: 29, p50: "200–300 ms after deposit" },
+    tags: "near account balance testnet",
+    input: '{ "account_id": "nen-testnet.testnet" }',
+    output: '{ "account_id", "exists", "balance_yocto",\n  "storage_bytes", "has_contract" }',
+    sources: "NEAR testnet RPC (FastNEAR, falling back to rpc.testnet.near.org).",
+    license: "Public NEAR chain data, served by Nen's own demo seller.",
+    payout: "direct", bot: BOT,
+    note: "Health includes 7 early failures while NEAR RPC was down; none were charged."
+  },
+  {
+    id: "nansen/smart-money-holdings", name: "Smart Money holdings", provider: "Nansen", cat: "onchain-data",
+    desc: "Current token holdings of wallets Nansen labels as Smart Money, filtered by chain. Rate limit 5 req/s per paying wallet.",
+    price: "0.05", network: "eip155:8453 (Base)", schemes: "exact", emptyFree: true,
+    routable: false, status: ["warn", "Pending review"], reviewer: null, reviewedAt: null, sha: SHA_NANSEN, approved: null,
+    health: null, tags: "smart money holdings wallets tokens nansen",
+    input: '{ "chains": ["ethereum"] }',
+    output: "Holdings per token, per Nansen's x402 API.",
+    sources: "Nansen's own labelled onchain dataset, sold over its public x402 API.",
+    license: "Nen only indexes the endpoint; the agent pays Nansen directly and Nansen's terms apply.",
+    payout: "direct", bot: null,
+    note: "Not routable: pending review by the Nen team. No paid call made yet."
+  }
+];
+const RECEIPTS = [
+  ["05:15:45","rcpt_1953883b","paid_ok","0.001",6874,9055,"0x5b82eb434285b8077f76c4e0d1103fbf09d3281d2e909a3a7bd3cb901d5ad659"],
+  ["05:15:54","rcpt_1ca6ad58","paid_ok","0.001",3,186,null],
+  ["05:15:54","rcpt_0a672ec3","paid_ok","0.001",4,201,null],
+  ["05:15:54","rcpt_bb59a1d3","paid_ok","0.001",3,192,null],
+  ["05:15:55","rcpt_1dd83e0f","paid_ok","0.001",2,189,null],
+  ["05:32:29","rcpt_c3f02259","paid_ok","0.001",13,752,null],
+  ["05:32:30","rcpt_5e0d0745","paid_ok","0.001",3,202,null],
+  ["05:32:30","rcpt_4f28949f","paid_ok","0.001",3,213,null],
+  ["05:32:30","rcpt_66e1fa70","paid_ok","0.001",2,200,null],
+  ["18:14:37","rcpt_6eb77daa","paid_ok","0.001",19,1240,null],
+  ["18:14:38","rcpt_b5e2866a","paid_ok","0.001",6045,7861,"0x967354670d57bf5ab07b1280749c6cd938589c7d73bec9e3f0884e777a5cbac6"],
+  ["18:14:46","rcpt_a1ae6129","paid_ok","0.001",4,208,null]
+].reverse();
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const short = h => h.slice(0, 10) + "…" + h.slice(-4);
+
+function checksHtml(list) {
+  return list.map(([id, ok, detail, fix]) =>
+    `<li><span class="ic ${ok ? "y" : "n"}">${ok ? "✓" : "✕"}</span><span class="id">${id}</span><span>${esc(detail)}${fix ? `<span class="fix">${esc(fix)}</span>` : ""}</span></li>`
+  ).join("");
+}
+
+function detailHtml(l) {
+  const unchanged = l.approved && l.approved === l.sha;
+  const statusPill = l.routable
+    ? `<span class="pill ok"><span class="dot"></span>Routable</span>`
+    : `<span class="pill warn"><span class="dot"></span>Not routable</span>`;
+  const review = l.reviewer
+    ? `Reviewed by ${esc(l.reviewer)} · ${l.reviewedAt} · manifest <span class="mono">${short(l.sha)}</span> ${unchanged ? "= approved hash ✓" : "≠ approved hash"}`
+    : `No review yet · manifest <span class="mono">${short(l.sha)}</span>`;
+  const run = `run({ listing_id: "${l.id}", input: ${l.input} })`;
+  return `<div class="detail-in">
+    <div class="status-line">${statusPill}<span>${review}</span></div>
+    <div class="tiles">
+      <div><b>$${l.price} / call</b><span>USDC · ${l.network.split(" ")[1].replace(/[()]/g, "")}</span></div>
+      <div><b>${l.emptyFree ? "Free" : "Charged"}</b><span>empty result (declared)</span></div>
+      <div><b>Free</b><span>on error (Nen rule)</span></div>
+      <div><b>${l.health ? l.health.rate : "—"}</b><span>${l.health ? `success · ${l.health.n} calls` : "no calls yet"}</span></div>
+      <div><b>${l.health ? "~250 ms" : "—"}</b><span>${l.health ? "paid call, warm channel" : "latency"}</span></div>
+    </div>
+    <div class="block"><span class="eyebrow">Use from your agent</span><pre>${esc(run)}</pre></div>
+    <div class="cols">
+      <div class="block"><span class="eyebrow">What to send</span><pre>${esc(l.input)}</pre>
+        <span class="eyebrow" style="margin-top:6px">What you get back</span><pre>${esc(l.output)}</pre></div>
+      <div class="block"><span class="eyebrow">Payment & data</span>
+        <dl class="kv">
+          <dt>Protocol</dt><dd>x402 V2 · ${esc(l.schemes)}</dd>
+          <dt>Network</dt><dd>${esc(l.network)}</dd>
+          <dt>Payout</dt><dd>${esc(l.payout)} to the seller's address</dd>
+          <dt>Sources</dt><dd>${esc(l.sources)}</dd>
+          <dt>License</dt><dd>${esc(l.license)}</dd>
+        </dl>
+        <p class="sub" style="margin-top:6px">${esc(l.note)}</p>
+      </div>
+    </div>
+    ${l.bot ? `<div class="block"><span class="eyebrow">Bot check</span><ul class="checks">${checksHtml(l.bot)}</ul></div>` : ""}
+  </div>`;
+}
+
+const state = { q: "", cat: "all", live: false, open: null };
+function renderRows() {
+  const q = state.q.trim().toLowerCase();
+  const list = LISTINGS.filter(l =>
+    (state.cat === "all" || l.cat === state.cat) &&
+    (!state.live || l.routable) &&
+    (!q || q.split(/\s+/).some(w => (l.name + " " + l.provider + " " + l.tags + " " + l.desc).toLowerCase().includes(w)))
+  );
+  const tb = document.getElementById("rows");
+  if (!list.length) { tb.innerHTML = `<tr><td colspan="5" class="empty">No listing matches. Clear the search or choose All.</td></tr>`; return; }
+  tb.innerHTML = list.map(l => {
+    const open = state.open === l.id;
+    return `<tr class="row${l.routable ? "" : " dim"}" tabindex="0" data-id="${l.id}" aria-expanded="${open}">
+      <td><span class="caret">▸</span> <span class="name">${esc(l.name)}</span><div class="sub">${esc(l.provider)} · ${l.cat} · <span class="mono">${l.id}</span></div></td>
+      <td class="price num">$${l.price}<span class="sub">/call</span></td>
+      <td><span class="pill ${l.emptyFree ? "ok" : "warn"}">empty ${l.emptyFree ? "free" : "charged"}</span> <span class="pill plain">errors free</span></td>
+      <td class="num">${l.health ? `${l.health.rate} · ${l.health.n} calls` : `<span class="sub">—</span>`}</td>
+      <td><span class="pill ${l.status[0]}"><span class="dot"></span>${l.status[1]}</span>${l.routable ? "" : `<div class="sub" style="margin-top:4px">not routable</div>`}</td>
+    </tr>${open ? `<tr class="detail"><td colspan="5">${detailHtml(l)}</td></tr>` : ""}`;
+  }).join("");
+}
+function toggle(id) { state.open = state.open === id ? null : id; renderRows(); }
+document.getElementById("rows").addEventListener("click", e => { const r = e.target.closest("tr.row"); if (r) toggle(r.dataset.id); });
+document.getElementById("rows").addEventListener("keydown", e => { const r = e.target.closest("tr.row"); if (r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggle(r.dataset.id); } });
+document.getElementById("q").addEventListener("input", e => { state.q = e.target.value; renderRows(); });
+document.querySelectorAll(".chip[data-cat]").forEach(b => b.addEventListener("click", () => {
+  state.cat = b.dataset.cat;
+  document.querySelectorAll(".chip[data-cat]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  renderRows();
+}));
+document.getElementById("live").addEventListener("click", e => {
+  state.live = !state.live; e.currentTarget.setAttribute("aria-pressed", String(state.live)); renderRows();
+});
+
+document.getElementById("rcpts").innerHTML = RECEIPTS.map(([t, id, st, usd, sign, lat, tx]) => `<tr>
+  <td class="mono num">2026-11-03 ${t}</td><td class="mono">${id}…</td>
+  <td><span class="pill ok">${st}</span></td><td class="price num">$${usd}</td>
+  <td class="price num">${sign.toLocaleString()} ms</td><td class="price num">${lat.toLocaleString()} ms</td>
+  <td class="mono">${tx ? `<a href="https://sepolia.basescan.org/tx/${tx}">deposit ${short(tx)}</a>` : `<span class="sub">voucher</span>`}</td></tr>`).join("");
+document.getElementById("botchecks").innerHTML = checksHtml(BOT);
+
+document.querySelectorAll("[data-jump]").forEach(a => a.addEventListener("click", e => {
+  const el = document.getElementById(a.dataset.jump); if (!el) return;
+  e.preventDefault(); el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}));
+document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
+  const pre = document.getElementById(b.dataset.copy);
+  const done = () => { b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1500); };
+  navigator.clipboard?.writeText(pre.textContent).then(done, () => {
+    const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Press Ctrl+C";
+  }) ?? (() => { const r = document.createRange(); r.selectNodeContents(pre); getSelection().removeAllRanges(); getSelection().addRange(r); })();
+}));
+
+state.open = "nen/near-account";
+renderRows();
+</script>
