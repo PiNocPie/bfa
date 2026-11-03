@@ -1,47 +1,59 @@
-import { chainAdapters, contracts } from "chainsig.js";
-import { createPublicClient, http, type Hex } from "viem";
-import { base } from "viem/chains";
+import { contracts, utils, type MPCSignature } from "chainsig.js";
+import { publicKeyToAddress } from "viem/accounts";
+import type { Hex } from "viem";
 import type { MpcBackend, RsvSignature } from "./signers.js";
 
-type SignAndSend = Parameters<
-  InstanceType<typeof contracts.ChainSignatureContract>["sign"]
->[0]["signerAccount"]["signAndSendTransactions"];
+/** NEAR MPC signer contracts (Chain Signatures). */
+export const MPC_CONTRACTS = { mainnet: "v1.signer", testnet: "v1.signer-prod.testnet" } as const;
+
+/** 300 Tgas and 1 yoctoNEAR: what the MPC contract's `sign` method expects (same values chainsig.js sends). */
+const SIGN_GAS = 300_000_000_000_000n;
+const SIGN_DEPOSIT = 1n;
+
+/**
+ * The one NEAR capability Nen needs: call a contract method as `accountId`.
+ * A near-api-js `Account` satisfies this directly.
+ */
+export interface NearCaller {
+  readonly accountId: string;
+  callFunction(args: {
+    contractId: string;
+    methodName: string;
+    args: Record<string, unknown>;
+    deposit: bigint;
+    gas: bigint;
+  }): Promise<unknown>;
+}
 
 export interface NearMpcOptions {
   networkId: "mainnet" | "testnet";
-  /** Sends the NEAR transaction that calls the MPC contract's `sign` method (e.g. from near-api-js Account). */
-  signAndSendTransactions: SignAndSend;
-  /** Defaults to chainsig.js's built-in address for the network (v1.signer on mainnet). */
+  /** Signs and sends the `sign` call. Its accountId is the predecessor the agent's EVM key is derived from. */
+  caller: NearCaller;
   contractId?: string;
-  /** Base RPC used only for address derivation helpers. */
-  baseRpcUrl?: string;
 }
 
-/** Production MPC backend: NEAR Chain Signatures through chainsig.js. */
+/** Production MPC backend: NEAR Chain Signatures. Address derivation is local math; signing is one NEAR transaction. */
 export function nearMpc(opts: NearMpcOptions): MpcBackend {
-  const contract = new contracts.ChainSignatureContract({
-    networkId: opts.networkId,
-    ...(opts.contractId && { contractId: opts.contractId }),
-  });
-  const evm = new chainAdapters.evm.EVM({
-    publicClient: createPublicClient({ chain: base, transport: http(opts.baseRpcUrl) }) as never,
-    contract,
-  });
+  const contractId = opts.contractId ?? MPC_CONTRACTS[opts.networkId];
+  const contract = new contracts.ChainSignatureContract({ networkId: opts.networkId, contractId });
   return {
     async deriveEvmAddress(predecessor, path) {
-      const { address } = await evm.deriveAddressAndPublicKey(predecessor, path);
-      return address as Hex;
+      const pub = (await contract.getDerivedPublicKey({ path, predecessor })) as string;
+      return publicKeyToAddress(`0x${pub}` as Hex);
     },
     async signHash(predecessor, path, hash): Promise<RsvSignature> {
-      const bytes = Array.from(Buffer.from(hash.slice(2), "hex"));
-      const [sig] = await contract.sign({
-        payloads: [bytes],
-        path,
-        keyType: "Ecdsa",
-        signerAccount: { accountId: predecessor, signAndSendTransactions: opts.signAndSendTransactions },
+      if (predecessor !== opts.caller.accountId) {
+        throw new Error(`predecessor ${predecessor} must be the calling account ${opts.caller.accountId}`);
+      }
+      const result = await opts.caller.callFunction({
+        contractId,
+        methodName: "sign",
+        args: { request: { payload_v2: { Ecdsa: hash.slice(2) }, path, domain_id: 0 } },
+        deposit: SIGN_DEPOSIT,
+        gas: SIGN_GAS,
       });
-      if (!sig) throw new Error("MPC returned no signature");
-      return sig;
+      if (!result) throw new Error("MPC sign returned no result");
+      return utils.cryptography.toRSV(result as MPCSignature);
     },
   };
 }

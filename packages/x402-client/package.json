@@ -22,5 +22,8 @@
     "ajv": "8.17.1",
     "chainsig.js": "1.1.16",
     "viem": "2.57.15"
+  },
+  "devDependencies": {
+    "near-api-js": "7.4.0"
   }
 }
