@@ -143,7 +143,9 @@ Listing is free and BFA takes no cut of call payments: agents pay your `payTo` d
 | `packages/gateway` | Hosted MCP endpoint (`/v1`, Streamable HTTP) with BFA API keys: expiry, daily and per-API limits, allow/block lists, scopes; file or Supabase storage |
 | `contracts/treasury` | NEAR contract: per-user vaults with an on-chain daily limit, signing through Chain Signatures |
 | `contracts/fee-splitter` | Base contracts: per-user top-up addresses that split the 1.5% fee without custody |
-| `site/` | Website preview and the BB mascot (`mascot.svg`) |
+| `packages/web` | The live website and console (Google sign-in, browser-held wallet, keys, receipts), served by the gateway |
+| `site/` | Static website preview and the BB mascot (`mascot.svg`) |
+| `Dockerfile`, `railway.json`, `scripts/start-hosted.sh` | One-service deployment; see [docs/deploy-railway.md](docs/deploy-railway.md) |
 | `registry/` | Public listings, reviews and JSON Schemas |
 | `examples/dev-registry/` | Reviewed listing for the localhost demo seller |
 | `docs/research/competitor-ux.md` | Survey of other agent API markets |
