@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { extname, join, normalize } from "node:path";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { ReceiptStore } from "@bfa/core";
@@ -8,6 +10,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { authenticate, type KeyStore } from "./keys.js";
 import { SerialQueue, keyPolicy } from "./policy.js";
+import { unseal, type UserStore } from "./users.js";
 
 export interface GatewayOptions {
   /** Same configuration as the stdio server (registry, NEAR signer, session key, gateway-wide daily cap). */
@@ -18,6 +21,14 @@ export interface GatewayOptions {
   now?: () => Date;
   /** Largest accepted POST body. Default 1 MiB. */
   maxBodyBytes?: number;
+  /** Signed-in users. Keys with a user_id pay from that user's own treasury vault. */
+  users?: UserStore;
+  /** Decrypts users' agent keys (BFA_SECRET_KEY). Required with `users`. */
+  secret?: Buffer;
+  /** The console's /api handler (see consoleApi). */
+  consoleApi?: (req: IncomingMessage, res: ServerResponse, path: string) => Promise<boolean>;
+  /** Directory with the website (index.html, app.js, ...), served at /. */
+  webDir?: string;
 }
 
 export interface Gateway {
@@ -76,12 +87,50 @@ export function createGateway(opts: GatewayOptions): Gateway {
   const now = opts.now ?? (() => new Date());
   const maxBody = opts.maxBodyBytes ?? 1024 * 1024;
   const t = tools({ ...opts.config, receiptStore: opts.receipts });
+  const perUser = new Map<string, ReturnType<typeof tools>>();
+
+  /** Operator keys pay from the gateway's wallet; a user's keys pay from that user's own vault, via their agent key. */
+  async function toolsForKey(keyId: string): Promise<ReturnType<typeof tools>> {
+    const key = await opts.keys.get(keyId);
+    if (!key?.user_id) return t;
+    const cached = perUser.get(key.user_id);
+    if (cached) return cached;
+    const user = await opts.users?.get(key.user_id);
+    if (!user || user.wallet_status !== "ready" || !user.near_account_id || !user.agent_secret_enc || !opts.secret) {
+      throw new HttpError(403, "this key's owner has not finished wallet setup");
+    }
+    if (!opts.config.treasuryId) throw new HttpError(503, "gateway has no treasury configured (BFA_TREASURY_ID)");
+    const ut = tools({
+      ...opts.config,
+      receiptStore: opts.receipts,
+      nearAccountId: user.near_account_id,
+      nearPrivateKey: unseal(opts.secret, user.agent_secret_enc),
+      stateDir: join(opts.config.stateDir, "users", user.id),
+    });
+    perUser.set(key.user_id, ut);
+    return ut;
+  }
+
+  const TYPES: Record<string, string> = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".svg": "image/svg+xml", ".css": "text/css; charset=utf-8", ".json": "application/json", ".png": "image/png", ".txt": "text/plain; charset=utf-8" };
+  async function serveStatic(path: string, res: ServerResponse): Promise<boolean> {
+    if (!opts.webDir) return false;
+    const rel = normalize(path === "" || path === "/" ? "/index.html" : path).replace(/^(\.\.[/\\])+/, "");
+    if (rel.includes("..")) return false;
+    try {
+      const data = await readFile(join(opts.webDir, rel));
+      res.writeHead(200, { "content-type": TYPES[extname(rel)] ?? "application/octet-stream", "cache-control": "no-cache" });
+      res.end(data);
+      return true;
+    } catch {
+      return false;
+    }
+  }
   const payQueue = new SerialQueue();
   const sessions = new Map<string, Session>();
 
   async function openSession(keyId: string, req: IncomingMessage, res: ServerResponse, body: unknown): Promise<void> {
     const server = new McpServer({ name: "bfa-gateway", version: "0.1.0" });
-    registerTools(server, t, keyPolicy({ keyId, keys: opts.keys, receipts: opts.receipts, payQueue, now }));
+    registerTools(server, await toolsForKey(keyId), keyPolicy({ keyId, keys: opts.keys, receipts: opts.receipts, payQueue, now }));
     const transport: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
       onsessioninitialized: (id) => {
@@ -99,6 +148,8 @@ export function createGateway(opts: GatewayOptions): Gateway {
     try {
       const path = new URL(req.url ?? "/", "http://gateway").pathname.replace(/\/+$/, "");
       if (req.method === "GET" && path === "/healthz") return sendJson(res, 200, { ok: true });
+      if (opts.consoleApi && (await opts.consoleApi(req, res, path))) return;
+      if (req.method === "GET" && path !== MCP_PATH && (await serveStatic(path, res))) return;
       if (path !== MCP_PATH) return sendJson(res, 404, { error: { code: "not_found", message: `the MCP endpoint is ${MCP_PATH}` } });
       if (!["POST", "GET", "DELETE"].includes(req.method ?? "")) {
         return sendJson(res, 405, { error: { code: "method_not_allowed", message: "use POST, GET or DELETE" } }, { allow: "POST, GET, DELETE" });

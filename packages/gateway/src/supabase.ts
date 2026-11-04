@@ -8,7 +8,9 @@ import {
   type ReceiptStore,
 } from "@bfa/core";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { randomUUID } from "node:crypto";
 import { validateKey, type ApiKeyRecord, type KeyStore } from "./keys.js";
+import type { UserRecord, UserStore } from "./users.js";
 
 // Tables created by supabase/migrations/0001_init.sql. Both have RLS on and no policies: only the service role
 // (which bypasses RLS) can read or write them. The service role key must stay on the server.
@@ -55,8 +57,8 @@ interface KeyRow {
   listing_access: ApiKeyRecord["listing_access"];
 }
 
-function keyToRow(k: ApiKeyRecord): Omit<KeyRow, "user_id"> {
-  return { ...k };
+function keyToRow(k: ApiKeyRecord): KeyRow {
+  return { ...k, user_id: k.user_id ?? null };
 }
 
 function rowToKey(r: KeyRow): ApiKeyRecord {
@@ -72,6 +74,7 @@ function rowToKey(r: KeyRow): ApiKeyRecord {
     per_api_limits: r.per_api_limits ?? [],
     scopes: r.scopes,
     listing_access: r.listing_access ?? { mode: "all", listing_ids: [] },
+    user_id: r.user_id ?? null,
   };
   validateKey(k);
   return k;
@@ -207,4 +210,49 @@ export function supabaseServiceClient(url: string, serviceRoleKey: string): Supa
   return createClient(url, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
+}
+
+/** Users in Postgres (table `users`, migration 0002). Same contract as FileUserStore. */
+export class SupabaseUserStore implements UserStore {
+  constructor(
+    private readonly db: SupabaseClient,
+    private readonly table = "users",
+  ) {}
+
+  async get(id: string): Promise<UserRecord | undefined> {
+    const { data, error } = await this.db.from(this.table).select("*").eq("id", id).maybeSingle();
+    if (error) fail("get user", error);
+    return (data as UserRecord | null) ?? undefined;
+  }
+
+  async findByGoogleSub(sub: string): Promise<UserRecord | undefined> {
+    const { data, error } = await this.db.from(this.table).select("*").eq("google_sub", sub).maybeSingle();
+    if (error) fail("find user", error);
+    return (data as UserRecord | null) ?? undefined;
+  }
+
+  async upsertGoogle(input: { google_sub: string; email: string; name: string | null }, now: Date): Promise<UserRecord> {
+    const existing = await this.findByGoogleSub(input.google_sub);
+    if (existing) return this.update(existing.id, { email: input.email, name: input.name });
+    const row: UserRecord = {
+      id: randomUUID(),
+      google_sub: input.google_sub,
+      email: input.email,
+      name: input.name,
+      created_at: now.toISOString(),
+      near_account_id: null,
+      agent_public_key: null,
+      agent_secret_enc: null,
+      wallet_status: "none",
+    };
+    const { data, error } = await this.db.from(this.table).insert(row).select("*").single();
+    if (error) fail("insert user", error);
+    return data as UserRecord;
+  }
+
+  async update(id: string, patch: Partial<Omit<UserRecord, "id" | "google_sub" | "created_at">>): Promise<UserRecord> {
+    const { data, error } = await this.db.from(this.table).update(patch).eq("id", id).select("*").single();
+    if (error) fail("update user", error);
+    return data as UserRecord;
+  }
 }

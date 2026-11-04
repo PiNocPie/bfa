@@ -114,3 +114,24 @@ The Supabase store has only been tested against an in-memory mock of the client 
 ## Tests
 
 `pnpm --filter @bfa/gateway test` runs offline. A fake x402 V2 seller (the pattern from `packages/x402-client/src/pay.test.ts`) verifies real EIP-3009 signatures from a local test key, and the official MCP client calls the gateway over Streamable HTTP. The tests cover 401s, a paid call, expired, revoked and scope-less keys, the daily limit at its exact boundary, per-API calls and USD limits, allow and block lists (including query fallback), per-key receipts and idempotency, UTC-day accounting, and the Supabase stores against the mock.
+
+## Console, Google sign-in and per-user wallets
+
+The gateway also serves the website and its JSON API (`/api/*`), so one service runs everything.
+
+- **Sign-in:** Google Sign-In only. The browser gets an ID token from Google; `POST /api/auth/google` verifies its signature against Google's published keys, the issuer, the audience (`BFA_GOOGLE_CLIENT_ID`), expiry and a verified email, then sets an HttpOnly session cookie signed with `BFA_SECRET_KEY`. `BFA_DEV_LOGIN=1` adds an email-only sign-in for local testing; never set it in production.
+- **Wallets stay with the user.** On first setup the browser generates an ed25519 key that never leaves it, and downloads a recovery file. That key owns an implicit NEAR account. The gateway funds the account on testnet (1.5 NEAR), then the browser signs two transactions itself: `create_vault` on the treasury with the user's daily limit, and an access key for the gateway that may call only `sign_eip3009` (1 NEAR gas allowance). The gateway stores that function-call key encrypted (AES-256-GCM, `BFA_SECRET_KEY`). It can pay within the vault's on-chain limit and cannot change the limit, pause state or recipients.
+- **Keys made in the console** carry the owner's `user_id`, so their payments come from that user's vault. CLI keys (no user) still pay from the operator's wallet.
+- **Browser NEAR calls** go through `POST /api/near/rpc`, which forwards only read methods and the broadcasting of transactions the browser signed.
+
+| Variable | Purpose |
+|---|---|
+| `BFA_SECRET_KEY` | 32 bytes hex (`openssl rand -hex 32`). Signs sessions and encrypts agent keys. Required. Keep it stable: changing it makes stored agent keys unreadable. |
+| `BFA_GOOGLE_CLIENT_ID` | OAuth client id (Web) from Google Cloud Console. Add your site's origin to its authorized JavaScript origins. |
+| `BFA_TREASURY_ID` | Treasury contract, e.g. `treasury.nen-testnet.testnet`. |
+| `BFA_TOPUP_FACTORY` | `BfaTopUpFactory` address, shown as each user's top-up address. |
+| `BFA_WEB_DIR` | Built website (`packages/web/dist`). |
+| `BFA_SECURE_COOKIES=1` | Set behind https. |
+| `NEAR_ACCOUNT_ID` / `NEAR_PRIVATE_KEY` | Operator account: sponsors new users' accounts on testnet and pays for CLI keys. |
+
+Verified on testnet (2026-11-04): a new user signed in, set up a wallet in the browser, topped up 1.015 USDC through the fee splitter (1.000 to their vault `0xEE8B…131B`), created a key with a $0.003 daily limit in the console, and an agent made three paid calls from that vault (channel deposit [`0xd1d0a1b8…3ee6`](https://sepolia.basescan.org/tx/0xd1d0a1b8b62b5f6afd38940bc8ef3cff97e3e1e235be71bb052cec05db923ee6)) before the fourth was refused with `limit_reached`.

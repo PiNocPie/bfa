@@ -35,6 +35,8 @@ export interface ApiKeyRecord {
   per_api_limits: PerApiLimit[];
   scopes: Scope[];
   listing_access: ListingAccess;
+  /** The signed-in user who owns this key; null for operator keys made with the CLI. Their payments come from that user's own vault. */
+  user_id?: string | null;
 }
 
 /** Where API keys live: a JSON file (`FileKeyStore`) or Postgres via Supabase (`SupabaseKeyStore`). */
@@ -97,6 +99,7 @@ export interface NewKeyInput {
   perApiLimits?: PerApiLimit[];
   scopes?: Scope[];
   listingAccess?: ListingAccess;
+  userId?: string | null;
   network: "testnet" | "mainnet";
   /** Creation time; defaults to now. */
   now?: Date;
@@ -158,6 +161,7 @@ export async function createKey(store: KeyStore, input: NewKeyInput): Promise<{ 
     listing_access: input.listingAccess
       ? { mode: input.listingAccess.mode, listing_ids: [...new Set(input.listingAccess.listing_ids)] }
       : { ...DEFAULT_LISTING_ACCESS, listing_ids: [] },
+    user_id: input.userId ?? null,
   };
   validateKey(record);
   await store.insert(record);

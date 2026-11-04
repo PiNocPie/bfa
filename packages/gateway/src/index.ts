@@ -3,3 +3,7 @@ export * from "./policy.js";
 export * from "./server.js";
 export * from "./stores.js";
 export * from "./supabase.js";
+export * from "./auth.js";
+export * from "./chain.js";
+export * from "./console.js";
+export * from "./users.js";

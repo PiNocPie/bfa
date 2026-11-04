@@ -25,11 +25,12 @@
     "@bfa/mcp": "workspace:*",
     "@modelcontextprotocol/sdk": "1.32.2",
     "@supabase/supabase-js": "2.118.0",
-    "zod": "4.1.12"
+    "zod": "4.1.12",
+    "@bfa/x402-client": "workspace:*",
+    "near-api-js": "7.4.0",
+    "viem": "2.57.15"
   },
   "devDependencies": {
-    "@bfa/x402-client": "workspace:*",
-    "@x402/core": "2.29.0",
-    "viem": "2.57.15"
+    "@x402/core": "2.29.0"
   }
 }
