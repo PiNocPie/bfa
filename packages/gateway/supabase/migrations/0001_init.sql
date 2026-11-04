@@ -56,3 +56,9 @@ alter table public.receipts enable row level security;
 -- No policies on purpose. Also drop the default grants to the client roles.
 revoke all on table public.api_keys from anon, authenticated;
 revoke all on table public.receipts from anon, authenticated;
+
+-- The gateway connects as service_role. Grant it explicitly so this works with the Supabase project setting
+-- "Automatically expose new tables" turned off.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on table public.api_keys to service_role;
+grant select, insert, update, delete on table public.receipts to service_role;

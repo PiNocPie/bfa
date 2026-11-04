@@ -19,3 +19,5 @@ alter table public.api_keys
 
 alter table public.users enable row level security;
 revoke all on table public.users from anon, authenticated;
+
+grant select, insert, update, delete on table public.users to service_role;
