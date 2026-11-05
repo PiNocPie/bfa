@@ -25,6 +25,7 @@ export interface UserRecord {
 }
 
 export interface UserStore {
+  list(): Promise<UserRecord[]>;
   get(id: string): Promise<UserRecord | undefined>;
   findByGoogleSub(sub: string): Promise<UserRecord | undefined>;
   upsertGoogle(input: { google_sub: string; email: string; name: string | null }, now: Date): Promise<UserRecord>;
@@ -102,6 +103,10 @@ export class FileUserStore implements UserStore {
     });
     this.queue = run.catch(() => undefined);
     return run;
+  }
+
+  async list() {
+    return (await this.read()).users;
   }
 
   async get(id: string) {

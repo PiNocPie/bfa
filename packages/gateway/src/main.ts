@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { configFromEnv } from "@bfa/mcp/lib";
 import { chain } from "./chain.js";
 import { consoleApi } from "./console.js";
+import { sweeper as makeSweeper } from "./sweeper.js";
 import { createGateway, listen } from "./server.js";
 import { storesFromEnv } from "./stores.js";
 import { secretKeyFromEnv } from "./users.js";
@@ -25,6 +26,18 @@ const ch = config.treasuryId
       ...(env.BFA_TOPUP_FACTORY && { topUpFactory: env.BFA_TOPUP_FACTORY as `0x${string}` }),
     })
   : undefined;
+const sw =
+  ch && ch.topUpFactory && config.nearAccountId && config.nearPrivateKey && env.BFA_SWEEPER !== "0"
+    ? makeSweeper({
+        network: config.network,
+        chain: ch,
+        users: stores.users,
+        nearAccountId: config.nearAccountId,
+        nearPrivateKey: config.nearPrivateKey,
+        ...(config.nearRpcUrls && { rpcUrls: config.nearRpcUrls }),
+      })
+    : undefined;
+sw?.start();
 const api = consoleApi({
   network: config.network,
   keys: stores.keys,
@@ -37,6 +50,7 @@ const api = consoleApi({
   secureCookies: env.BFA_SECURE_COOKIES === "1",
   registryDir: config.registryDir,
   ...(config.devRegistryDir && { devRegistryDir: config.devRegistryDir }),
+  ...(sw && { sweeper: sw }),
 });
 const gw = createGateway({
   config,

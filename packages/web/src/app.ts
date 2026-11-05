@@ -162,7 +162,7 @@ function walletView() {
     ${w.top_up_address ? `<div class="field"><span>Your top-up address</span><div class="addr"><code id="dep">${esc(w.top_up_address)}</code><button class="btn small ghost" data-copy="dep">Copy</button></div>
       <small>Send USDC only. A public contract splits each deposit: to add $10.00 send $10.15; $10.00 goes to your vault and $0.15 to BFA. Nobody, including BFA, can send it anywhere else. Anyone can trigger the split; BFA does it within minutes.</small></div>` : `<p class="sub">Top-up contract not configured on this gateway.</p>`}
     ${state.cfg?.network === "testnet" ? `<p class="sub">Test USDC: <a href="https://faucet.circle.com">faucet.circle.com</a> → Base Sepolia.</p>` : ""}
-  </div></div>
+  </div>${w.top_up_address ? `<div class="pf"><span class="sub" style="margin-right:auto;align-self:center">Sent something? BFA moves it into your vault automatically, or do it now.</span><button class="btn small solid" id="sweep" ${state.busy ? "disabled" : ""}>${state.busy === "Sweeping…" ? "Sweeping…" : "Move it to my vault now"}</button></div>` : ""}</div>
   <div class="panel"><div class="ph"><h3>On-chain limits</h3><span class="sub">signed by your browser key</span></div><div class="pb">
     <label class="field"><span>Daily limit for all agents</span><div class="money"><span>$</span><input id="newlimit" inputmode="decimal" value="${(Number(v.daily_limit) / 1e6).toFixed(2)}"></div></label>
     <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn solid small" id="savelimit">Save limit</button><button class="btn small" id="pause">${v.paused ? "Resume spending" : "Pause all spending"}</button><button class="btn small ghost" id="recovery">Download recovery file</button></div>
@@ -405,6 +405,13 @@ document.addEventListener("click", async (e) => {
     } else if (t.id === "pause") {
       await pauseVault(keyOrThrow(), state.me!.wallet.treasury_id!, !state.me!.wallet.vault!.paused);
       toast(state.me!.wallet.vault!.paused ? "Spending resumed" : "All spending paused");
+      await refresh();
+    } else if (t.id === "sweep") {
+      state.busy = "Sweeping…";
+      render();
+      const r = await api<{ swept: boolean; message?: string; received_atomic?: string }>("POST", "/api/wallet/sweep", {});
+      state.busy = null;
+      toast(r.swept ? `Moved ${usd(r.received_atomic!)} received; your vault is updated` : r.message ?? "Nothing to move yet");
       await refresh();
     } else if (t.id === "recovery") {
       download(recoveryBlob(state.me!.user.email, keyOrThrow()), "bfa-recovery-key.json");

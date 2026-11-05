@@ -219,6 +219,12 @@ export class SupabaseUserStore implements UserStore {
     private readonly table = "users",
   ) {}
 
+  async list(): Promise<UserRecord[]> {
+    const { data, error } = await this.db.from(this.table).select("*").order("created_at", { ascending: true }).limit(1000);
+    if (error) fail("list users", error);
+    return (data as UserRecord[]) ?? [];
+  }
+
   async get(id: string): Promise<UserRecord | undefined> {
     const { data, error } = await this.db.from(this.table).select("*").eq("id", id).maybeSingle();
     if (error) fail("get user", error);

@@ -5,6 +5,7 @@ import type { Hex } from "viem";
 import { clearedSessionCookie, readSession, sessionCookie, signSession, verifyGoogleIdToken, type JwksFetcher } from "./auth.js";
 import { implicitAccountId, type Chain } from "./chain.js";
 import { createKey, type ApiKeyRecord, type KeyStore, type ListingAccess, type PerApiLimit, type Scope } from "./keys.js";
+import type { Sweeper } from "./sweeper.js";
 import { seal, type UserRecord, type UserStore } from "./users.js";
 
 export interface ConsoleOptions {
@@ -27,6 +28,8 @@ export interface ConsoleOptions {
   /** Gas allowance of the gateway's function-call key (yoctoNEAR). */
   agentAllowanceYocto?: bigint;
   jwks?: JwksFetcher;
+  /** Moves top-ups into vaults; enables POST /api/wallet/sweep. */
+  sweeper?: Sweeper;
   now?: () => Date;
 }
 
@@ -216,6 +219,16 @@ export function consoleApi(o: ConsoleOptions) {
       }
       await o.users.update(u.id, { wallet_status: "ready" });
       return json(res, 200, { ok: true, wallet: await wallet({ ...u, wallet_status: "ready" }) });
+    }
+
+    if (m === "POST" && path === "/api/wallet/sweep") {
+      if (!o.chain || !o.sweeper || !u.near_account_id || u.wallet_status !== "ready") throw new ApiError(409, "wallet_not_ready", "set up your wallet first");
+      try {
+        const r = await o.sweeper.sweepFor(await o.chain.vaultAddress(u.near_account_id));
+        return json(res, 200, r ? { swept: true, ...r } : { swept: false, message: "nothing at your top-up address yet; USDC can take a minute to arrive" });
+      } catch (e) {
+        throw new ApiError(502, "sweep_failed", (e as Error).message.slice(0, 200));
+      }
     }
 
     if (m === "POST" && path === "/api/near/rpc") {

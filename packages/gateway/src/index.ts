@@ -7,3 +7,4 @@ export * from "./auth.js";
 export * from "./chain.js";
 export * from "./console.js";
 export * from "./users.js";
+export * from "./sweeper.js";
