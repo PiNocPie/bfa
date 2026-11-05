@@ -104,7 +104,7 @@ function signin() {
     <svg class="cat" width="76" height="76" aria-hidden="true" style="justify-self:center"><use href="#bfa-cat"/></svg>
     <p class="sub" style="text-align:center;margin-top:-8px">Hi, I'm BB. I keep your receipts.</p>
     <div><p class="label">BFA console</p><h2 style="margin-top:10px">Sign in</h2><p class="sub" style="margin-top:6px">New here? Signing in creates your account.</p></div>
-    ${c?.google_client_id ? `<div id="gbtn" style="min-height:44px"></div>` : `<p class="sub">Google sign-in is not configured on this gateway yet.</p>`}
+    ${c?.google_client_id ? `<div class="gwrap"><div id="gbtn"></div></div><p class="sub" style="text-align:center">We only see your email and name. Your wallet key never leaves this browser.</p>` : `<p class="sub">Google sign-in is not configured on this gateway yet.</p>`}
     ${c?.dev_login ? `<div class="or">or, for local testing</div><label class="field"><span>Email (dev sign-in)</span><input class="input" id="devemail" type="email" placeholder="you@example.com"></label><button class="btn gbtn" id="devlogin">Sign in without Google</button>` : ""}
     ${state.err ? `<p class="sub" style="color:var(--bad)">${esc(state.err)}</p>` : ""}
   </div>`;
@@ -227,7 +227,17 @@ function render() {
   $("#net")!.textContent = (state.cfg?.network ?? "testnet").toUpperCase();
   if (v === "signin" && state.cfg?.google_client_id && typeof google !== "undefined") {
     google.accounts.id.initialize({ client_id: state.cfg.google_client_id, callback: onGoogle });
-    google.accounts.id.renderButton($("#gbtn"), { theme: "filled_black", size: "large", text: "continue_with", shape: "pill", width: 320 });
+    const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+    const box = $("#gbtn")!.parentElement!;
+    google.accounts.id.renderButton($("#gbtn"), {
+      theme: dark ? "filled_black" : "outline",
+      size: "large",
+      text: "continue_with",
+      shape: "pill",
+      logo_alignment: "left",
+      locale: "en",
+      width: Math.min(400, Math.max(220, box.clientWidth)),
+    });
   }
 }
 
