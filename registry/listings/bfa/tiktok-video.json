@@ -1,0 +1,62 @@
+{
+  "$schema": "../../schema/listing.schema.json",
+  "manifest_version": 1,
+  "id": "bfa/tiktok-video",
+  "provider": {
+    "name": "BFA",
+    "url": "https://github.com/PiNocPie/nen",
+    "contact": "https://github.com/PiNocPie/nen/issues"
+  },
+  "name": "TikTok video stats",
+  "description": "Caption, author, play, like and share counts for one public TikTok video, or the latest videos for a hashtag. Coming soon: not live yet, so it can't be bought. The price is the planned price.",
+  "categories": [
+    "social"
+  ],
+  "tags": [
+    "tiktok",
+    "video",
+    "hashtag",
+    "coming-soon"
+  ],
+  "endpoint": {
+    "url": "https://bfagateway-production.up.railway.app/soon/tiktok-video",
+    "method": "POST",
+    "input_schema": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "hashtag": {
+          "type": "string"
+        }
+      }
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "example_input": {
+      "hashtag": "nearprotocol"
+    }
+  },
+  "pricing": {
+    "model": "per_call",
+    "amount_usd": "0.003",
+    "charges_empty_results": false
+  },
+  "payment": {
+    "protocol": "x402",
+    "networks": [
+      "eip155:84532"
+    ],
+    "payout": {
+      "via": "direct"
+    }
+  },
+  "data": {
+    "sources": "Planned BFA endpoint. Upstream sources will be chosen per their terms before launch.",
+    "license_statement": "Not live. BFA will only launch this on sources whose terms allow agents to use the data this way.",
+    "terms_url": "https://github.com/PiNocPie/nen/blob/main/README.md"
+  }
+}

@@ -132,7 +132,7 @@ function shelfItem(l: Listing) {
   return `<article class="item">
     <div class="box"><b>${esc(l.name)}</b><span class="tid">${esc(l.id)}</span>${l.description ? `<p>${esc(l.description)}</p>` : `<p>${esc(l.provider)}</p>`}</div>
     <div class="tag${buyable ? "" : " off"}"><span class="p">$${esc(l.price_usd)}<small>/call</small></span><span class="s">${stock}${l.charges_empty_results ? "" : "<br>empty = free"}</span></div>
-    <button class="btn small ${inBasket ? "solid" : "ghost"}" data-add="${esc(l.id)}" ${buyable ? "" : "disabled"}>${inBasket ? `In basket (${inBasket}) · add one` : "Add to basket"}</button>
+    <button class="btn small ${inBasket ? "solid" : "ghost"}" data-add="${esc(l.id)}" ${buyable ? "" : "disabled"}>${!buyable ? (l.routable ? "Mainnet only" : "Coming soon") : inBasket ? `In basket (${inBasket}) · add one` : "Add to basket"}</button>
   </article>`;
 }
 

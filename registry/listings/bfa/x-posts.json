@@ -1,0 +1,68 @@
+{
+  "$schema": "../../schema/listing.schema.json",
+  "manifest_version": 1,
+  "id": "bfa/x-posts",
+  "provider": {
+    "name": "BFA",
+    "url": "https://github.com/PiNocPie/nen",
+    "contact": "https://github.com/PiNocPie/nen/issues"
+  },
+  "name": "X posts search",
+  "description": "Recent public posts on X for a keyword, hashtag or account, with author, time and engagement counts. Coming soon: not live yet, so it can't be bought. The price is the planned price.",
+  "categories": [
+    "social"
+  ],
+  "tags": [
+    "x",
+    "twitter",
+    "posts",
+    "search",
+    "coming-soon"
+  ],
+  "endpoint": {
+    "url": "https://bfagateway-production.up.railway.app/soon/x-posts",
+    "method": "POST",
+    "input_schema": {
+      "type": "object",
+      "required": [
+        "query"
+      ],
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      }
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "example_input": {
+      "query": "near protocol",
+      "limit": 20
+    }
+  },
+  "pricing": {
+    "model": "per_call",
+    "amount_usd": "0.002",
+    "charges_empty_results": false
+  },
+  "payment": {
+    "protocol": "x402",
+    "networks": [
+      "eip155:84532"
+    ],
+    "payout": {
+      "via": "direct"
+    }
+  },
+  "data": {
+    "sources": "Planned BFA endpoint. Upstream sources will be chosen per their terms before launch.",
+    "license_statement": "Not live. BFA will only launch this on sources whose terms allow agents to use the data this way.",
+    "terms_url": "https://github.com/PiNocPie/nen/blob/main/README.md"
+  }
+}

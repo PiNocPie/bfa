@@ -1,0 +1,67 @@
+{
+  "$schema": "../../schema/listing.schema.json",
+  "manifest_version": 1,
+  "id": "bfa/youtube-video",
+  "provider": {
+    "name": "BFA",
+    "url": "https://github.com/PiNocPie/nen",
+    "contact": "https://github.com/PiNocPie/nen/issues"
+  },
+  "name": "YouTube video and comments",
+  "description": "Title, channel, view and like counts, and top comments for one public YouTube video. Coming soon: not live yet, so it can't be bought. The price is the planned price.",
+  "categories": [
+    "social"
+  ],
+  "tags": [
+    "youtube",
+    "video",
+    "comments",
+    "coming-soon"
+  ],
+  "endpoint": {
+    "url": "https://bfagateway-production.up.railway.app/soon/youtube-video",
+    "method": "POST",
+    "input_schema": {
+      "type": "object",
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "comments": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200
+        }
+      }
+    },
+    "output_schema": {
+      "type": "object"
+    },
+    "example_input": {
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "comments": 20
+    }
+  },
+  "pricing": {
+    "model": "per_call",
+    "amount_usd": "0.003",
+    "charges_empty_results": false
+  },
+  "payment": {
+    "protocol": "x402",
+    "networks": [
+      "eip155:84532"
+    ],
+    "payout": {
+      "via": "direct"
+    }
+  },
+  "data": {
+    "sources": "Planned BFA endpoint. Upstream sources will be chosen per their terms before launch.",
+    "license_statement": "Not live. BFA will only launch this on sources whose terms allow agents to use the data this way.",
+    "terms_url": "https://github.com/PiNocPie/nen/blob/main/README.md"
+  }
+}
