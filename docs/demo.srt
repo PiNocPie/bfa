@@ -1,0 +1,63 @@
+1
+00:00:00,000 --> 00:00:06,000
+AI agents need data, but every API wants
+an account, a subscription and a key.
+
+2
+00:00:06,000 --> 00:00:12,000
+Agents can't sign up,
+and you don't want to hand them your card.
+
+3
+00:00:12,000 --> 00:00:20,000
+BFA is an API market built for agents.
+You sign in with Google.
+
+4
+00:00:20,000 --> 00:00:30,000
+Your browser creates a NEAR key
+that never leaves it.
+
+5
+00:00:30,000 --> 00:00:45,000
+You sign two transactions yourself: a vault with your daily limit,
+and a gateway key that can only call sign_eip3009.
+
+6
+00:00:45,000 --> 00:00:55,000
+To add funds, you send USDC
+to your own top-up address.
+
+7
+00:00:55,000 --> 00:01:05,000
+A public contract splits it: $1.00 to your vault, $0.015 to BFA.
+We never hold your money.
+
+8
+00:01:05,000 --> 00:01:20,000
+Each agent gets its own API key, with an expiry date,
+a daily cap, per-API caps and an allowlist.
+
+9
+00:01:20,000 --> 00:01:40,000
+Now the agent works on its own. Claude Code finds the API,
+reads the exact price, and pays for one call.
+
+10
+00:01:40,000 --> 00:02:00,000
+Every call has a receipt. The payment comes from your vault,
+signed by NEAR Chain Signatures and checked on NEAR.
+
+11
+00:02:00,000 --> 00:02:15,000
+When the agent hits its limit, the next call is refused
+before anything is paid. Failed and empty calls are free.
+
+12
+00:02:15,000 --> 00:02:28,000
+Anyone can list an API by pull request; we pin the manifest hash.
+BFA is open source and live on testnet today.
+
+13
+00:02:28,000 --> 00:02:32,000
+BFA. Built for agents.
