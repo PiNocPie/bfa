@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { chmod, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { usdToMicros } from "@bfa/core";
+import { usdToMicros, type Routing } from "@bfa/core";
 
 export const SCOPES = ["run", "receipts", "topups"] as const;
 export type Scope = (typeof SCOPES)[number];
@@ -18,6 +18,8 @@ export interface ListingAccess {
   listing_ids: string[];
 }
 export const DEFAULT_LISTING_ACCESS: ListingAccess = { mode: "all", listing_ids: [] };
+export const DEFAULT_ROUTING: Routing = { prefer: [], strict: false };
+export const MAX_ROUTE_ENTRIES = 20;
 
 /** What the gateway stores for an API key. The secret itself is never stored, only its sha256. */
 export interface ApiKeyRecord {
@@ -35,6 +37,8 @@ export interface ApiKeyRecord {
   per_api_limits: PerApiLimit[];
   scopes: Scope[];
   listing_access: ListingAccess;
+  /** Which listings to try first when the agent asks by query. Missing on keys made before routing existed. */
+  routing?: Routing;
   /** The signed-in user who owns this key; null for operator keys made with the CLI. Their payments come from that user's own vault. */
   user_id?: string | null;
 }
@@ -48,6 +52,8 @@ export interface KeyStore {
   findBySha256(sha256: string): Promise<ApiKeyRecord | undefined>;
   /** Marks a key revoked. Revoking twice keeps the first revoked_at. Returns undefined for an unknown id. */
   revoke(id: string, at: Date): Promise<ApiKeyRecord | undefined>;
+  /** Replaces a key's routing. Returns undefined for an unknown id. */
+  setRouting(id: string, routing: Routing): Promise<ApiKeyRecord | undefined>;
 }
 
 const BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -99,6 +105,7 @@ export interface NewKeyInput {
   perApiLimits?: PerApiLimit[];
   scopes?: Scope[];
   listingAccess?: ListingAccess;
+  routing?: Routing;
   userId?: string | null;
   network: "testnet" | "mainnet";
   /** Creation time; defaults to now. */
@@ -140,6 +147,24 @@ export function validateKey(r: ApiKeyRecord): void {
   if (a.mode === "all" && a.listing_ids.length) throw new Error("listing_access mode all takes no listing_ids");
   if (a.mode === "allow" && a.listing_ids.length === 0) throw new Error("listing_access mode allow needs at least one listing id");
   if (a.listing_ids.some((id) => typeof id !== "string" || !id)) throw new Error("listing_access.listing_ids must be non-empty strings");
+  if (r.routing) validateRouting(r.routing);
+}
+
+export function validateRouting(r: Routing): void {
+  if (!r || !Array.isArray(r.prefer) || typeof r.strict !== "boolean") throw new Error("routing must be { prefer: string[], strict: boolean }");
+  if (r.prefer.length > MAX_ROUTE_ENTRIES) throw new Error(`routing.prefer takes at most ${MAX_ROUTE_ENTRIES} entries`);
+  for (const p of r.prefer) {
+    if (typeof p !== "string" || !p.trim() || p.length > 120) throw new Error("routing.prefer entries must be listing ids or provider:<name>");
+    if (p.startsWith("provider:") && !p.slice("provider:".length).trim()) throw new Error(`routing entry "${p}" names no provider`);
+  }
+}
+
+/** Trims entries and drops duplicates, keeping the first occurrence (the order is the preference). */
+export function normalizeRouting(r: Routing): Routing {
+  if (!r || !Array.isArray(r.prefer)) return r;
+  const seen = new Set<string>();
+  const prefer = r.prefer.map((p) => (typeof p === "string" ? p.trim() : p)).filter((p) => !seen.has(p) && seen.add(p));
+  return { prefer, strict: r.strict };
 }
 
 /** Creates a key, stores only its hash, and returns the secret. The secret cannot be recovered later. */
@@ -161,6 +186,7 @@ export async function createKey(store: KeyStore, input: NewKeyInput): Promise<{ 
     listing_access: input.listingAccess
       ? { mode: input.listingAccess.mode, listing_ids: [...new Set(input.listingAccess.listing_ids)] }
       : { ...DEFAULT_LISTING_ACCESS, listing_ids: [] },
+    routing: input.routing ? normalizeRouting(input.routing) : { ...DEFAULT_ROUTING, prefer: [] },
     user_id: input.userId ?? null,
   };
   validateKey(record);
@@ -257,6 +283,16 @@ export class FileKeyStore implements KeyStore {
 
   async findBySha256(sha256: string): Promise<ApiKeyRecord | undefined> {
     return (await this.read()).keys.find((k) => k.sha256 === sha256);
+  }
+
+  setRouting(id: string, routing: Routing): Promise<ApiKeyRecord | undefined> {
+    const next = normalizeRouting(routing);
+    validateRouting(next);
+    return this.mutate((f) => {
+      const k = f.keys.find((x) => x.id === id);
+      if (k) k.routing = next;
+      return k;
+    });
   }
 
   revoke(id: string, at: Date): Promise<ApiKeyRecord | undefined> {

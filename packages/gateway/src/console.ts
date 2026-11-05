@@ -5,6 +5,7 @@ import type { Hex } from "viem";
 import { clearedSessionCookie, readSession, sessionCookie, signSession, verifyGoogleIdToken, type JwksFetcher } from "./auth.js";
 import { implicitAccountId, type Chain } from "./chain.js";
 import { createKey, type ApiKeyRecord, type KeyStore, type ListingAccess, type PerApiLimit, type Scope } from "./keys.js";
+import type { Routing } from "@bfa/core";
 import type { Sweeper } from "./sweeper.js";
 import { seal, type UserRecord, type UserStore } from "./users.js";
 
@@ -148,6 +149,8 @@ export function consoleApi(o: ConsoleOptions) {
           routable: e.routable,
           review_status: e.review?.status ?? "pending",
           not_routable_reason: e.not_routable_reason ?? null,
+          description: e.listing.description,
+          example_input: e.listing.endpoint.example_input ?? {},
         })),
       });
     }
@@ -258,6 +261,7 @@ export function consoleApi(o: ConsoleOptions) {
           perApiLimits: (b.per_api_limits as PerApiLimit[] | undefined) ?? [],
           ...(Array.isArray(b.scopes) && { scopes: b.scopes as Scope[] }),
           ...(b.listing_access ? { listingAccess: b.listing_access as ListingAccess } : {}),
+          ...(b.routing ? { routing: b.routing as Routing } : {}),
           userId: u.id,
           network: o.network,
           now: now(),
@@ -274,6 +278,20 @@ export function consoleApi(o: ConsoleOptions) {
       if (!k || k.user_id !== u.id) throw new ApiError(404, "not_found", "no such key");
       const out = await o.keys.revoke(k.id, now());
       return json(res, 200, { key: out && publicKey(out) });
+    }
+
+    const rt = /^\/api\/keys\/(key_[0-9A-Za-z]{16})\/routing$/.exec(path);
+    if (m === "POST" && rt) {
+      const k = await o.keys.get(rt[1]!);
+      if (!k || k.user_id !== u.id) throw new ApiError(404, "not_found", "no such key");
+      const b = await body(req);
+      const routing = { prefer: b.prefer as string[], strict: Boolean(b.strict) };
+      try {
+        const out = await o.keys.setRouting(k.id, routing);
+        return json(res, 200, { key: out && publicKey(out) });
+      } catch (e) {
+        throw new ApiError(400, "invalid_routing", (e as Error).message);
+      }
     }
 
     if (m === "GET" && path === "/api/receipts") {

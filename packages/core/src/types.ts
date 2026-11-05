@@ -72,6 +72,17 @@ export interface Health {
   samples: number;
 }
 
+/**
+ * Route preferences for an agent (stored on its API key). When the agent asks by query, matching listings named in
+ * `prefer` are tried first, in that order, before the score-ranked rest. Entries are listing ids
+ * ("google/gemini-image") or "provider:<name>" for every listing from one provider. strict: when at least one
+ * preferred listing matches the query, never fall back to a listing outside the list.
+ */
+export interface Routing {
+  prefer: string[];
+  strict: boolean;
+}
+
 export interface Quote {
   listing_id: string;
   provider: string;

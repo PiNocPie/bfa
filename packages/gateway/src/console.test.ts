@@ -134,6 +134,21 @@ describe("console API", () => {
     expect((await call("POST", `/api/keys/${made.body.key.id}/revoke`, {})).status).toBe(404);
   });
 
+  it("saves route preferences on a key, only for its owner", async () => {
+    const { call, users } = await start();
+    await call("POST", "/api/auth/dev", { email: "a@b.co" });
+    await users.update((await users.findByGoogleSub("dev:a@b.co"))!.id, { wallet_status: "ready" });
+    const made = await call("POST", "/api/keys", { name: "img", daily_limit_usd: "1", routing: { prefer: ["provider:Gemini"], strict: false } });
+    expect(made.body.key.routing).toEqual({ prefer: ["provider:Gemini"], strict: false });
+    const id = made.body.key.id;
+    const set = await call("POST", `/api/keys/${id}/routing`, { prefer: [" google/gemini-image ", "provider:Gemini", "google/gemini-image"], strict: true });
+    expect(set.status).toBe(200);
+    expect(set.body.key.routing).toEqual({ prefer: ["google/gemini-image", "provider:Gemini"], strict: true });
+    expect((await call("POST", `/api/keys/${id}/routing`, { prefer: ["provider:"], strict: true })).body.error.code).toBe("invalid_routing");
+    await call("POST", "/api/auth/dev", { email: "b@b.co" });
+    expect((await call("POST", `/api/keys/${id}/routing`, { prefer: [], strict: false })).status).toBe(404);
+  });
+
   it("starts a wallet: implicit account from the browser key, sponsored once, agent key sealed", async () => {
     const sponsored: string[] = [];
     const chainImpl: Partial<Chain> = {

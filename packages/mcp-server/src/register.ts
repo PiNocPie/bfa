@@ -74,7 +74,7 @@ export function registerTools(server: McpServer, t: BfaTools, policy: ToolPolicy
       },
       annotations: { readOnlyHint: true },
     },
-    wrap("quote", (a) => t.quote(a)),
+    wrap("quote", (a, ctx) => t.quote(a, ctx)),
   );
 
   server.registerTool(

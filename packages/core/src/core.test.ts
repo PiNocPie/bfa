@@ -148,6 +148,26 @@ describe("router", () => {
     expect(q.rationale).toMatch(/99% success/);
   });
 
+  it("puts a key's preferred listings first, and strict routing drops the rest", async () => {
+    const dir = await tempRegistry([
+      { l: listing("wan/image", "0.001"), review: "reviewed" },
+      { l: listing("gemini/image", "0.004"), review: "reviewed" },
+      { l: listing("other/image", "0.001"), review: "reviewed" },
+    ]);
+    const { entries } = await loadRegistry(dir);
+    const health = new InMemoryHealth();
+    expect(quote(entries, health).listing_id).not.toBe("gemini/image");
+    const byProvider = quote(entries, health, { routing: { prefer: ["provider:Gemini"], strict: false } });
+    expect(byProvider.listing_id).toBe("gemini/image");
+    expect(byProvider.fallbacks).toHaveLength(2);
+    expect(byProvider.rationale).toMatch(/first choice in this key's routing/);
+    const strict = quote(entries, health, { routing: { prefer: ["gemini/image", "other/image"], strict: true } });
+    expect([strict.listing_id, ...strict.fallbacks]).toEqual(["gemini/image", "other/image"]);
+    // A preference that matches nothing in this query changes nothing, even when strict.
+    const none = quote(entries, health, { routing: { prefer: ["provider:nobody"], strict: true } });
+    expect(none.fallbacks).toHaveLength(2);
+  });
+
   it("returns typed, actionable errors", async () => {
     const dir = await tempRegistry([{ l: listing("pricey/scrape", "0.05"), review: "reviewed" }]);
     const { entries } = await loadRegistry(dir);

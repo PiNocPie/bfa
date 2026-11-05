@@ -1,6 +1,6 @@
 import { BfaError } from "./errors.js";
 import { microsToUsd, usdToMicros } from "./money.js";
-import type { Category, Health, Quote, RegistryEntry } from "./types.js";
+import type { Category, Health, Quote, RegistryEntry, Routing } from "./types.js";
 
 /** Prior used until a listing has enough samples, so new listings are neither favoured nor buried. */
 export const HEALTH_PRIOR: Health = { success_rate: 0.9, p50_ms: 3000, empty_paid_rate: 0, samples: 0 };
@@ -89,6 +89,21 @@ export interface QuoteOptions {
   maxPriceUsd?: string;
   /** Only listings that accept payment on one of these CAIP-2 networks (the networks the agent's wallet holds USDC on). */
   payerNetworks?: string[];
+  /** The caller's route preferences (an API key's routing). Applied after scoring; see `routeRank`. */
+  routing?: Routing;
+}
+
+/**
+ * Where a listing falls in a routing preference list: the index of the first entry that names it (by listing id, or
+ * `provider:<name>` for every listing from that provider, case-insensitive), or Infinity when no entry does.
+ */
+export function routeRank(listing: { id: string; provider: string | { name: string } }, routing: Routing | undefined): number {
+  if (!routing?.prefer.length) return Infinity;
+  const provider = (typeof listing.provider === "string" ? listing.provider : listing.provider.name).trim().toLowerCase();
+  const i = routing.prefer.findIndex((p) =>
+    p.startsWith("provider:") ? p.slice("provider:".length).trim().toLowerCase() === provider : p === listing.id,
+  );
+  return i < 0 ? Infinity : i;
 }
 
 function effectiveHealth(h: Health | undefined): Health {
@@ -161,12 +176,23 @@ export function quote(candidates: RegistryEntry[], health: HealthSource, opts: Q
   });
   scored.sort((a, b) => b.score - a.score || a.e.listing.id.localeCompare(b.e.listing.id));
 
-  const best = scored[0]!;
+  // Route preferences win over score; score still orders listings the preference ranks equally.
+  let routed = scored;
+  if (opts.routing?.prefer.length) {
+    const rank = new Map(scored.map((s) => [s.e.listing.id, routeRank(s.e.listing, opts.routing)]));
+    routed = [...scored].sort((a, b) => rank.get(a.e.listing.id)! - rank.get(b.e.listing.id)!);
+    const preferred = routed.filter((s) => rank.get(s.e.listing.id)! < Infinity);
+    if (opts.routing.strict && preferred.length) routed = preferred;
+  }
+  const isPreferred = routeRank(routed[0]!.e.listing, opts.routing) < Infinity;
+
+  const best = routed[0]!;
   const rationale =
+    (isPreferred ? "first choice in this key's routing; " : "") +
     `${best.e.listing.provider.name} at $${microsToUsd(usdToMicros(best.e.listing.pricing.amount_usd))}/call, ` +
     `${Math.round(best.h.success_rate * 100)}% success, p50 ${Math.round(best.h.p50_ms)}ms` +
     (best.h.samples < MIN_SAMPLES ? ` (only ${best.h.samples} samples; prior blended in)` : "") +
-    (scored.length > 1 ? `; beat ${scored.length - 1} alternative(s)` : "");
+    (routed.length > 1 ? `; ${routed.length - 1} fallback(s)` : "");
 
   return {
     listing_id: best.e.listing.id,
@@ -175,6 +201,6 @@ export function quote(candidates: RegistryEntry[], health: HealthSource, opts: Q
     networks: best.e.listing.payment.networks,
     score: Number(best.score.toFixed(4)),
     rationale,
-    fallbacks: scored.slice(1).map((s) => s.e.listing.id),
+    fallbacks: routed.slice(1).map((s) => s.e.listing.id),
   };
 }

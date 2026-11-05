@@ -9,7 +9,8 @@ import {
 } from "@bfa/core";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
-import { validateKey, type ApiKeyRecord, type KeyStore } from "./keys.js";
+import { DEFAULT_ROUTING, normalizeRouting, validateKey, validateRouting, type ApiKeyRecord, type KeyStore } from "./keys.js";
+import type { Routing } from "@bfa/core";
 import type { UserRecord, UserStore } from "./users.js";
 
 // Tables created by supabase/migrations/0001_init.sql. Both have RLS on and no policies: only the service role
@@ -55,10 +56,14 @@ interface KeyRow {
   per_api_limits: ApiKeyRecord["per_api_limits"];
   scopes: ApiKeyRecord["scopes"];
   listing_access: ApiKeyRecord["listing_access"];
+  /** Added by migration 0003; absent on databases that have not run it yet. */
+  routing?: ApiKeyRecord["routing"] | null;
 }
 
 function keyToRow(k: ApiKeyRecord): KeyRow {
-  return { ...k, user_id: k.user_id ?? null };
+  const { routing, ...rest } = k;
+  // Only send routing when it says something, so key creation keeps working before migration 0003 is applied.
+  return { ...rest, user_id: k.user_id ?? null, ...(routing?.prefer.length ? { routing } : {}) };
 }
 
 function rowToKey(r: KeyRow): ApiKeyRecord {
@@ -74,6 +79,7 @@ function rowToKey(r: KeyRow): ApiKeyRecord {
     per_api_limits: r.per_api_limits ?? [],
     scopes: r.scopes,
     listing_access: r.listing_access ?? { mode: "all", listing_ids: [] },
+    routing: r.routing ?? { ...DEFAULT_ROUTING, prefer: [] },
     user_id: r.user_id ?? null,
   };
   validateKey(k);
@@ -113,6 +119,14 @@ export class SupabaseKeyStore implements KeyStore {
     // Only sets revoked_at when it is still null, so a second revoke keeps the first time.
     const { error } = await this.db.from(this.table).update({ revoked_at: at.toISOString() }).eq("id", id).is("revoked_at", null);
     if (error) fail("revoke api key", error);
+    return this.get(id);
+  }
+
+  async setRouting(id: string, routing: Routing): Promise<ApiKeyRecord | undefined> {
+    const next = normalizeRouting(routing);
+    validateRouting(next);
+    const { error } = await this.db.from(this.table).update({ routing: next }).eq("id", id);
+    if (error) fail("set key routing (apply supabase/migrations/0003_key_routing.sql)", error);
     return this.get(id);
   }
 }

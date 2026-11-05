@@ -3,6 +3,7 @@ import {
   isCharged,
   microsToUsd,
   nextUtcMidnight,
+  routeRank,
   usdToMicros,
   utcDayStart,
   type Listing,
@@ -123,6 +124,7 @@ export function keyView(key: ApiKeyRecord, usage: Usage, now: Date) {
     daily_limit_usd: key.daily_limit_usd,
     per_api_limits: key.per_api_limits,
     listing_access: key.listing_access,
+    routing: key.routing ?? { prefer: [], strict: false },
     spent_today_usd: microsToUsd(usage.spent),
     usage_today: Object.fromEntries(
       [...usage.byListing].map(([id, u]) => [id, { spent_usd: microsToUsd(u.spent), calls: u.calls }]),
@@ -171,6 +173,7 @@ export function keyPolicy(o: KeyPolicyOptions): ToolPolicy {
         const ctx: CallContext = {
           keyId: key.id,
           allowsListing: allows,
+          ...(key.routing?.prefer.length && { routing: key.routing }),
           beforePay: async (listing, info) => {
             const at = o.now();
             assertListingAllowed(key, listing.id, info.fromQuery && info.remaining > 0);
@@ -195,8 +198,16 @@ async function decorate(
 ): Promise<unknown> {
   switch (tool) {
     case "discover": {
-      const hits = (r.hits as { id: string }[]).map((h) => ({ ...h, allowed_for_this_key: allows(h.id) }));
-      return { ...r, hits };
+      // Preferred listings first (stable), so an agent reading top-down picks what its owner chose.
+      const hits = (r.hits as { id: string; provider: string }[])
+        .map((h, i) => ({ h, i, rank: routeRank(h, key.routing) }))
+        .sort((a, b) => a.rank - b.rank || a.i - b.i)
+        .map(({ h, rank }) => ({
+          ...h,
+          allowed_for_this_key: allows(h.id),
+          ...(key.routing?.prefer.length && { preferred_for_this_key: rank < Infinity }),
+        }));
+      return { ...r, hits, ...(key.routing?.prefer.length && { routing: key.routing }) };
     }
     case "inspect": {
       const id = (r.listing as { id: string }).id;

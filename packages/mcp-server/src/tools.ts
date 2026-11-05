@@ -13,6 +13,7 @@ import {
   toErrorShape,
   type Category,
   type Listing,
+  type Routing,
   type Receipt,
   type ReceiptStore,
   type RegistryEntry,
@@ -63,6 +64,8 @@ export interface BfaConfig {
 export interface CallContext {
   keyId?: string;
   allowsListing?: (listingId: string) => boolean;
+  /** Route preferences for queries (an API key's routing): preferred listings are ranked first. */
+  routing?: Routing;
   beforePay?: (listing: Listing, info: { fromQuery: boolean; remaining: number }) => Promise<void>;
 }
 
@@ -189,7 +192,7 @@ export function tools(cfg: BfaConfig) {
       };
     },
 
-    async quote(a: { query?: string; listing_ids?: string[]; max_price_usd?: string }) {
+    async quote(a: { query?: string; listing_ids?: string[]; max_price_usd?: string }, ctx?: CallContext) {
       const all = await entries();
       let candidates: RegistryEntry[];
       if (a.listing_ids?.length) {
@@ -203,6 +206,7 @@ export function tools(cfg: BfaConfig) {
       return rankListings(candidates, await health(), {
         payerNetworks: [payerNetwork],
         ...(a.max_price_usd && { maxPriceUsd: a.max_price_usd }),
+        ...(ctx?.routing && { routing: ctx.routing }),
       });
     },
 
@@ -221,7 +225,7 @@ export function tools(cfg: BfaConfig) {
         }
         order = [a.listing_id];
       } else if (a.query) {
-        const q = await this.quote({ query: a.query, ...(a.max_price_usd && { max_price_usd: a.max_price_usd }) });
+        const q = await this.quote({ query: a.query, ...(a.max_price_usd && { max_price_usd: a.max_price_usd }) }, ctx);
         const ranked = [q.listing_id, ...q.fallbacks];
         order = allows ? ranked.filter((id) => allows(id)) : ranked;
         if (order.length === 0) {
