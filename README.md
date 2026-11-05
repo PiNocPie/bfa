@@ -1,8 +1,10 @@
 # BFA (Built For Agents)
 
+**The convenience store for AI agents. Open 24 hours, for every agent.**
+
 BFA is an open, pay-per-call API market for AI agents. An agent finds an API, checks the price, pays for one call over [x402](https://x402.org) and gets a JSON receipt. It does this through an MCP server, so it needs no per-provider account, subscription or provider API key.
 
-People sign in with Google, keep their money in their own NEAR-controlled vault, and give each agent a BFA key with an expiry date and daily limits.
+People sign in with Google, keep their money in their own NEAR-controlled vault, and give each agent a BFA key with an expiry date, a daily cap, per-API caps, an allow/block list and routing (which providers to try first, for example Gemini before Wan).
 
 The agent pays from a Base address that its **NEAR account controls through [Chain Signatures](https://docs.near.org/chain-abstraction/chain-signatures)**. No private EVM key appears in any config file. Anyone can list an API by opening a PR. A listing starts routing only after the BFA team reviews it, and it stops routing if its manifest changes after review.
 
@@ -13,9 +15,9 @@ Status: working on testnets (NEAR testnet + Base Sepolia). Not on mainnet yet. T
 **https://bfagateway-production.up.railway.app**
 
 1. Open the site → **Sign in** → Continue with Google. → You land in the console.
-2. **Wallet → Create my wallet.** → Your browser makes a NEAR key (a recovery file downloads), BFA funds a new NEAR testnet account, and you sign two transactions: `create_vault` with your daily limit, and a gateway key limited to `sign_eip3009`. → The wallet page shows your vault's Base Sepolia address and your personal top-up address.
+2. **Wallet → Create my wallet.** → Your browser makes a NEAR key and keeps it (a burner wallet key that stays in this browser), BFA funds a new NEAR testnet account, and you sign two transactions: `create_vault` with your daily limit, and a gateway key limited to `sign_eip3009`. → The wallet page shows your vault's Base Sepolia address and your personal top-up address. Nothing downloads during setup; if you want a copy of the key, use **Download a copy of the wallet key** on the Wallet page.
 3. **Top up:** get test USDC at [faucet.circle.com](https://faucet.circle.com) (Base Sepolia) and send it to your top-up address. → Within minutes a sweep splits it: e.g. send 1.015, see 1.000 in your vault.
-4. **API keys → Create API key** with a daily limit. → The secret is shown once, with a ready `claude mcp add` command.
+4. **API keys → Create API key** with a daily limit, and optionally a routing list (which providers to try first). → The secret is shown once, with a ready `claude mcp add` command. You can edit the routing later from the same page; see [per-key routing](#per-key-routing).
 5. Run that command in Claude Code and ask: *"Use BFA to check the NEAR testnet account nen-testnet.testnet. Inspect the price first."* → The agent calls `discover`, `inspect`, `run`, pays $0.001 and returns the data; the console's **Usage** page shows the receipt.
 6. Keep asking until the key's daily limit is used. → The next call returns `limit_reached` and nothing is paid.
 
@@ -33,7 +35,7 @@ pnpm install && pnpm build
 pnpm test
 ```
 
-You should see `Tests 8 passed` (core) and `Tests 7 passed` (x402-client). The x402-client tests start a fake x402 V2 seller that checks EIP-3009 signatures for real. Together the tests show that:
+You should see `Tests 9 passed` (core), `Tests 10 passed` (x402-client) and `Tests 41 passed` (gateway). The x402-client tests start a fake x402 V2 seller that checks EIP-3009 signatures for real. Together the tests show that:
 
 - the client pays the listed price and refuses to sign when the seller asks for more;
 - the client refuses before sending any request when the agent's `max_price_usd` is below the listing's price;
@@ -41,7 +43,8 @@ You should see `Tests 8 passed` (core) and `Tests 7 passed` (x402-client). The x
 - reusing an idempotency key never pays twice;
 - a listing routes only if it was reviewed and its manifest hash still matches;
 - a pricing model other than per-call is rejected;
-- the daily cap counts only today's charged calls.
+- the daily cap counts only today's charged calls;
+- a key's preferred listings are tried first, and strict routing drops the rest.
 
 ```bash
 pnpm registry:check
@@ -125,13 +128,25 @@ Keep `NEAR_PRIVATE_KEY` in your environment or a secret store, not in the file. 
 |---|---|---|
 | `discover` | free | Reviewed listings that match a query, with price and networks. Pass `include_not_routable: true` to also see pending ones. |
 | `inspect` | free | Input and output schema, example input, a price line such as `$0.001 / call · empty result: free · error: free`, review status, approved and current manifest sha256, and observed health. |
-| `quote` | free | The best listing plus ordered fallbacks, ranked 45% success rate, 25% price, 20% latency, 10% billing honesty. |
+| `quote` | free | The best listing plus ordered fallbacks, ranked 45% success rate, 25% price, 20% latency, 10% billing honesty. On the hosted gateway, the key's routing list comes first. |
 | `run` | **pays** | Data plus a receipt. Checks input against the schema before paying. Pays at most the listed price and at most `max_price_usd`. Respects the daily cap. Reusing `idempotency_key` replays the receipt. |
 | `receipts` | free | Recent receipts and today's spend against the cap. |
 | `wallet` | free | NEAR account, derived payer address, session key, USDC balance and limits. |
 | `submit_listing` | free | Dry run for sellers: schema check plus an unpaid probe of the endpoint's 402. It never pays and never publishes. |
 
 Errors are JSON with a `code` and a `next_action` (`retry`, `retry_after`, `use_fallback`, `raise_max_price`, `top_up`, `fix_input`, `stop`), so an agent can decide what to do next without reading prose.
+
+## Per-key routing
+
+Each API key can carry an ordered list of preferred providers or APIs, for example "Gemini first, then Wan". You set it on the key form when you create the key, or later with **Edit** in the Routing column of the **API keys** page. A change applies on the agent's next call.
+
+- Each entry is a listing id (`google/gemini-image`) or `provider:<name>` for every listing from that provider.
+- When the agent asks for data by description (`run` with a `query`, or `quote` / `discover`), BFA tries the preferred listings first, in list order. The rest follow, ranked by reliability, price and latency as usual.
+- **Strict:** if any preferred listing fits the request, BFA never falls back to a listing outside the list. If none fits, normal ranking applies.
+- A call that names a `listing_id` is not rerouted.
+- `discover` hits carry `preferred_for_this_key`, and preferred hits come first.
+
+Routing is stored on the key (`routing: { prefer: [...], strict: true|false }`, at most 20 entries). With Supabase storage, apply `packages/gateway/supabase/migrations/0003_key_routing.sql` after `0001_init.sql` and `0002_users.sql`; it adds the `api_keys.routing` (jsonb) column. Keys made before the migration keep working with no routing.
 
 ## List an API
 
@@ -155,10 +170,10 @@ Listing is free and BFA takes no cut of call payments: agents pay your `payTo` d
 | `packages/x402-client` | Paying client, signers (local key for tests, NEAR Chain Signatures), batch-settlement session, listing bot |
 | `packages/mcp-server` | The 7 MCP tools above |
 | `packages/demo-seller` | x402 seller selling a NEAR-native endpoint (`/near/account`) on Base Sepolia |
-| `packages/gateway` | Hosted MCP endpoint (`/v1`, Streamable HTTP) with BFA API keys: expiry, daily and per-API limits, allow/block lists, scopes; file or Supabase storage |
+| `packages/gateway` | Hosted MCP endpoint (`/v1`, Streamable HTTP) with BFA API keys: expiry, daily and per-API limits, allow/block lists, scopes, routing; file or Supabase storage (migrations in `packages/gateway/supabase/migrations`) |
 | `contracts/treasury` | NEAR contract: per-user vaults with an on-chain daily limit, signing through Chain Signatures |
 | `contracts/fee-splitter` | Base contracts: per-user top-up addresses that split the 1.5% fee without custody |
-| `packages/web` | The live website and console (Google sign-in, browser-held wallet, keys, receipts), served by the gateway |
+| `packages/web` | The live website and console (Google sign-in, browser-held burner wallet key, keys with routing, receipts), served by the gateway |
 | `site/` | Static website preview and the BB mascot (`mascot.svg`) |
 | `Dockerfile`, `railway.json`, `scripts/start-hosted.sh` | One-service deployment; see [docs/deploy-railway.md](docs/deploy-railway.md) |
 | `registry/` | Public listings, reviews and JSON Schemas |
@@ -175,7 +190,7 @@ Listing is free and BFA takes no cut of call payments: agents pay your `payTo` d
 - Review gating by manifest hash, the daily cap and idempotency.
 - Failed calls cost $0: in live runs, RPC outages came back as `unpaid_error` receipts. There is no automated test for this path yet.
 - **On-chain spending policy (BFA treasury).** [`treasury.nen-testnet.testnet`](contracts/treasury/README.md) signs only USDC EIP-3009 authorizations for a user's vault, after checking its daily limit, allowed recipients and tokens. The smoke run paid from the vault address `0x4752…82C6` with the channel deposit signed through the treasury ([`0x1e20c350…ed37`](https://sepolia.basescan.org/tx/0x1e20c3505732b51dac3e95027671c07386c5ddf5ed9ec84e1a7468e49276ed37)); an over-limit request was refused on-chain with `limit_reached`. Set `BFA_TREASURY_ID` to use it.
-- **API-key gateway.** `packages/gateway` enforces each key's expiry, scopes, allow/block list, daily limit and per-API limits before any payment is signed. Live run on testnet through the treasury: no key → 401, two paid calls, the third refused with `limit_reached` and `resets_at`. 28 offline tests; the Supabase store is tested against a mock only.
+- **API-key gateway.** `packages/gateway` enforces each key's expiry, scopes, allow/block list, daily limit and per-API limits before any payment is signed, and orders query results by the key's routing. Live run on testnet through the treasury: no key → 401, two paid calls, the third refused with `limit_reached` and `resets_at`. 41 offline tests; the Supabase store is tested against a mock only.
 - **Non-custodial top-up fee.** [`contracts/fee-splitter`](contracts/fee-splitter/README.md): each user gets a deterministic top-up address; anyone can sweep it, and it can only pay the user's wallet and BFA's 1.5% on-top fee (send $10.15, get $10.00). 18 tests on an in-process EVM. Live on Base Sepolia at [`0xd0fd…340f`](https://sepolia.basescan.org/address/0xd0fd9f5a17cdc84873a836c4c2971b2ae941340f), deployed with no EVM key (signed by NEAR Chain Signatures); a live top-up of 1.015 USDC was [swept](https://sepolia.basescan.org/tx/0xacc5b1c5c078d85293be34d1fdef0cbfeac1dad544c1a26e52295399c161244f) into 1.000 USDC for the user and 0.015 USDC for BFA.
 
 **Not done yet**
