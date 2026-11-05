@@ -33,9 +33,12 @@ export interface UserStore {
 
 // ---- encryption of the agent key at rest ----
 
-export function secretKeyFromEnv(hex: string | undefined): Buffer {
-  if (!hex || !/^[0-9a-fA-F]{64}$/.test(hex)) {
-    throw new Error("set BFA_SECRET_KEY to 32 random bytes in hex (openssl rand -hex 32); it encrypts agent keys and signs sessions");
+export function secretKeyFromEnv(raw: string | undefined): Buffer {
+  // Tolerate what dashboards often add by accident: surrounding whitespace, quotes and a 0x prefix.
+  const hex = (raw ?? "").trim().replace(/^["']|["']$/g, "").trim().replace(/^0x/i, "");
+  if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
+    const why = !raw ? "it is not set" : `it has ${hex.length} characters${/[^0-9a-fA-F]/.test(hex) ? " including non-hex ones" : ""}; it needs exactly 64 hex characters`;
+    throw new Error(`BFA_SECRET_KEY is invalid: ${why}. Generate one with: openssl rand -hex 32`);
   }
   return Buffer.from(hex, "hex");
 }
