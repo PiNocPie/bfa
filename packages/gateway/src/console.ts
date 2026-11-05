@@ -73,10 +73,11 @@ const ONE_NEAR = 10n ** 24n;
 /** The signed-in console's JSON API under /api. Returns false when the path is not an /api route. */
 export function consoleApi(o: ConsoleOptions) {
   const now = o.now ?? (() => new Date());
-  // NEAR reserves the worst-case gas cost of each call against a key's allowance (~0.3 NEAR for 300 Tgas), though only
-  // ~0.03 is burned, so the agent key needs well over 0.3 NEAR of allowance; the account is funded to cover it.
-  const sponsorYocto = o.sponsorYocto ?? (ONE_NEAR * 3n) / 2n;
-  const allowance = o.agentAllowanceYocto ?? ONE_NEAR;
+  // NEAR checks each call against the key's allowance and the account's balance at the worst-case gas price
+  // (~0.30 NEAR for 300 Tgas), though only ~0.03 NEAR is burned per signature. 0.4 NEAR of allowance clears that
+  // check; 0.5 NEAR of funding covers it plus the vault deposit and storage, for several channel deposits.
+  const sponsorYocto = o.sponsorYocto ?? ONE_NEAR / 2n;
+  const allowance = o.agentAllowanceYocto ?? (ONE_NEAR * 2n) / 5n;
 
   async function currentUser(req: IncomingMessage): Promise<UserRecord> {
     const uid = readSession(o.secret, req.headers.cookie, now());
