@@ -1,10 +1,25 @@
 # BFA (Built For Agents)
 
-BFA is an open, pay-per-call API market for AI agents. An agent finds an API, checks the price, pays for one call over [x402](https://x402.org) and gets a JSON receipt. It does this through an MCP server, so it needs no account, subscription or API key.
+BFA is an open, pay-per-call API market for AI agents. An agent finds an API, checks the price, pays for one call over [x402](https://x402.org) and gets a JSON receipt. It does this through an MCP server, so it needs no per-provider account, subscription or provider API key.
+
+People sign in with Google, keep their money in their own NEAR-controlled vault, and give each agent a BFA key with an expiry date and daily limits.
 
 The agent pays from a Base address that its **NEAR account controls through [Chain Signatures](https://docs.near.org/chain-abstraction/chain-signatures)**. No private EVM key appears in any config file. Anyone can list an API by opening a PR. A listing starts routing only after the BFA team reviews it, and it stops routing if its manifest changes after review.
 
 Status: working on testnets (NEAR testnet + Base Sepolia). Not on mainnet yet. The [what is real](#what-is-real-and-what-is-not) section lists what works and what doesn't.
+
+## Try the live demo (testnet)
+
+**https://bfagateway-production.up.railway.app**
+
+1. Open the site → **Sign in** → Continue with Google. → You land in the console.
+2. **Wallet → Create my wallet.** → Your browser makes a NEAR key (a recovery file downloads), BFA funds a new NEAR testnet account, and you sign two transactions: `create_vault` with your daily limit, and a gateway key limited to `sign_eip3009`. → The wallet page shows your vault's Base Sepolia address and your personal top-up address.
+3. **Top up:** get test USDC at [faucet.circle.com](https://faucet.circle.com) (Base Sepolia) and send it to your top-up address. → Within minutes a sweep splits it: e.g. send 1.015, see 1.000 in your vault.
+4. **API keys → Create API key** with a daily limit. → The secret is shown once, with a ready `claude mcp add` command.
+5. Run that command in Claude Code and ask: *"Use BFA to check the NEAR testnet account nen-testnet.testnet. Inspect the price first."* → The agent calls `discover`, `inspect`, `run`, pays $0.001 and returns the data; the console's **Usage** page shows the receipt.
+6. Keep asking until the key's daily limit is used. → The next call returns `limit_reached` and nothing is paid.
+
+MCP endpoint for any client: `https://bfagateway-production.up.railway.app/v1` with `Authorization: Bearer <your BFA key>`.
 
 ## Try it in 2 minutes (offline, no accounts)
 
