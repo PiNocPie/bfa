@@ -409,7 +409,7 @@ function renderGuide(v: string) {
   const g = guideState();
   const tip = tipFor(v);
   if (!tip || g.off || g.seen.includes(tip.id)) {
-    el.innerHTML = `<button class="guide-ask" id="guideon" aria-label="Show tips again" title="Show tips again"><img src="/guide.svg" alt=""></button>`;
+    el.innerHTML = "";
     return;
   }
   el.innerHTML = `<div class="guide-card" role="note"><img src="/guide.svg" alt="Nibs" width="70" height="95">
