@@ -89,8 +89,7 @@ function home() {
       <p class="lede">Your agent walks in, finds the API it needs, reads the price on the tag, pays for one call and leaves with a receipt. You give it a key with a budget; your money stays in your own vault on NEAR.</p>
       <div class="cta"><button class="btn accent" data-go="${state.me ? "overview" : "signin"}">${state.me ? "Open your dashboard" : "Sign in with Google"}</button><button class="btn" data-go="apis">Walk the aisles</button></div>
     </div>
-    <div class="slab"><div class="rcpt">
-      <svg class="cat perch" width="112" height="112" role="img" aria-label="BB, the BFA cat"><use href="#bfa-cat"/></svg>
+    <div class="slab"><svg class="cat big-bb" width="210" height="210" role="img" aria-label="BB, the BFA cat"><use href="#bfa-cat"/></svg><div class="rcpt">
       <div class="receipt" aria-label="Example receipt">
         <div class="rh"><b>bfa</b><span>open 24h · ${esc(net)}</span></div>
         <dl>
@@ -162,7 +161,7 @@ function apis() {
   const aisles = [...groups].sort((a, b) => b[1].filter((l) => l.routable).length - a[1].filter((l) => l.routable).length || a[0].localeCompare(b[0]));
   return `<div class="page-head"><div><h1>The aisles</h1>
     <p>Everything your agent can buy here, with the price on the tag. Live from this gateway's registry: only reviewed APIs take payment, the rest are coming soon.</p></div></div>
-  <div class="store"><div>${aisles.map(([c, ls], i) => `<section class="aisle"><h2>${esc(aisleName(c))} <small>aisle ${i + 1}</small></h2><div class="shelf">${ls.map(shelfItem).join("")}</div></section>`).join("") || `<p class="muted">Stocking the shelves…</p>`}</div>
+  <div class="store"><div>${aisles.map(([c, ls], i) => `<section class="aisle"><h2><svg class="cat" width="34" height="34" aria-hidden="true"><use href="#bfa-cat"/></svg>${esc(aisleName(c))} <small>aisle ${i + 1}</small></h2><div class="shelf">${ls.map(shelfItem).join("")}</div></section>`).join("") || `<p class="muted">Stocking the shelves…</p>`}</div>
   ${basketPanel()}</div>`;
 }
 
@@ -187,7 +186,7 @@ and don't spend more than $0.01.</pre><div><button class="btn small ghost" data-
 function signin() {
   const c = state.cfg;
   return `<div class="signin">
-    <div class="bb"><svg class="cat" width="120" height="120" aria-hidden="true"><use href="#bfa-cat"/></svg><p>Hi, I'm BB. I keep the receipts.</p></div>
+    <div class="bb"><svg class="cat" width="180" height="180" aria-hidden="true"><use href="#bfa-cat"/></svg><p>Hi, I'm BB. I keep the receipts.</p></div>
     <div class="form"><h2>Sign in</h2><p class="muted">New here? Signing in creates your account. We only see your email and name.</p>
     ${c?.google_client_id ? `<div class="gwrap"><div id="gbtn"></div></div>` : `<p class="sub">Google sign-in is not configured on this gateway yet.</p>`}
     ${c?.dev_login ? `<div class="or">or, for local testing</div><label class="field"><span>Email (dev sign-in)</span><input class="input" id="devemail" type="email" placeholder="you@example.com"></label><button class="btn gbtn" id="devlogin">Sign in without Google</button>` : ""}
