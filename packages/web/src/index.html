@@ -291,7 +291,7 @@ input[type=checkbox]{accent-color:var(--green-ink);width:16px;height:16px;margin
 .item .btn{width:100%}
 
 .store{display:grid;grid-template-columns:minmax(0,1fr) 20rem;gap:40px;align-items:start}
-.basket{position:sticky;top:calc(env(safe-area-inset-top,0px) + 90px);background:var(--sheet);border:1.5px solid var(--ink);border-radius:3px;padding:18px;display:grid;gap:14px}
+.basket{position:sticky;top:calc(env(safe-area-inset-top,0px) + 90px);max-height:calc(100vh - 110px);overflow-y:auto;background:var(--sheet);border:1.5px solid var(--ink);border-radius:3px;padding:18px;display:grid;gap:14px}
 .basket h3{display:flex;justify-content:space-between;align-items:baseline}
 .basket h3 span{font:500 .8rem/1 var(--f-mono);color:var(--muted)}
 .basket ul{list-style:none;margin:0;padding:0;display:grid;gap:0}

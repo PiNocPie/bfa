@@ -132,7 +132,7 @@ function shelfItem(l: Listing) {
   return `<article class="item">
     <div class="box"><b>${esc(l.name)}</b><span class="tid">${esc(l.id)}</span>${l.description ? `<p>${esc(l.description)}</p>` : `<p>${esc(l.provider)}</p>`}</div>
     <div class="tag${buyable ? "" : " off"}"><span class="p">$${esc(l.price_usd)}<small>/call</small></span><span class="s">${stock}${l.charges_empty_results ? "" : "<br>empty = free"}</span></div>
-    <button class="btn small ${inBasket ? "solid" : "ghost"}" data-add="${esc(l.id)}" ${buyable ? "" : "disabled"}>${!buyable ? (l.routable ? "Mainnet only" : "Coming soon") : inBasket ? `In basket (${inBasket}) · add one` : "Add to basket"}</button>
+    <button class="btn small ${inBasket ? "solid" : "ghost"}" data-add="${esc(l.id)}">${inBasket ? `In basket (${inBasket}) · add one` : buyable ? "Add to basket" : "Add to basket (preview)"}</button>
   </article>`;
 }
 
@@ -141,12 +141,15 @@ function basketPanel() {
   if (!lines.length) return `<aside class="basket" aria-label="Basket"><h3>Basket <span>0 items</span></h3><p class="empty-b">Add a few APIs to see what a task would cost. BFA gives your agent a cart tool that quotes the whole basket first, then pays once within your budget.</p></aside>`;
   let total = 0n;
   for (const r of lines) total += BigInt(atomic(r.l!.price_usd)) * BigInt(r.x.n);
+  const canBuy = (l: Listing) => l.routable && !(state.cfg?.network === "testnet" && !onTestnet(l));
+  const preview = lines.filter((r) => !canBuy(r.l!));
   const budget = state.budget || (Number(total) / 1e6).toFixed(Math.max(2, (Number(total) / 1e6).toString().split(".")[1]?.length ?? 2));
-  const prompt = `Use BFA's cart tool. Put these calls in a basket and show me the itemized total first:\n${lines.map((r, i) => `${i + 1}. ${r.l!.id} × ${r.x.n} ($${r.l!.price_usd} each)`).join("\n")}\nCheck out only if the total is at most $${budget}. Fill in each call's input for my task.`;
+  const prompt = `Use BFA's cart tool. Put these calls in a basket and show me the itemized total first:\n${lines.map((r, i) => `${i + 1}. ${r.l!.id} × ${r.x.n} ($${r.l!.price_usd} each)`).join("\n")}\nCheck out only if the total is at most $${budget}. Fill in each call's input for my task.${preview.length ? `\nNote: ${preview.map((r) => r.l!.id).join(", ")} ${preview.length === 1 ? "is" : "are"} coming soon on BFA and can't be bought yet; skip ${preview.length === 1 ? "it" : "them"} for now.` : ""}`;
   return `<aside class="basket" aria-label="Basket"><h3>Basket <span>${lineCount()} item${lineCount() === 1 ? "" : "s"}</span></h3>
-    <ul>${lines.map((r) => `<li><span><b style="font-weight:600">${esc(r.l!.name)}</b><br><span class="tid">$${esc(r.l!.price_usd)} each</span></span>
+    <ul>${lines.map((r) => `<li><span><b style="font-weight:600">${esc(r.l!.name)}</b><br><span class="tid">$${esc(r.l!.price_usd)} each${canBuy(r.l!) ? "" : " · coming soon"}</span></span>
       <span class="q"><button data-dec="${esc(r.x.id)}" aria-label="One less">−</button>${r.x.n}<button data-add="${esc(r.x.id)}" aria-label="One more">+</button></span></li>`).join("")}</ul>
-    <div class="sum"><span>Total</span><span>${usdFine(total)}</span></div>
+    <div class="sum"><span>${preview.length ? "Estimated total" : "Total"}</span><span>${usdFine(total)}</span></div>
+    ${preview.length ? `<p class="sub">Coming-soon items are a preview: they show what the task would cost once they're live. Nothing is charged for them.</p>` : ""}
     <label class="field"><span>Your agent's budget for this</span><div class="money"><span>$</span><input id="budget" inputmode="decimal" value="${esc(budget)}"></div></label>
     <div class="stack"><span class="label">Tell your agent</span><pre id="bprompt">${esc(prompt)}</pre><button class="btn small solid" data-copy="bprompt">Copy prompt</button></div>
     <button class="btn link" id="emptybasket">Empty the basket</button>
