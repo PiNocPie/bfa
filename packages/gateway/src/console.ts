@@ -202,7 +202,15 @@ export function consoleApi(o: ConsoleOptions) {
         patch = { agent_public_key: agentPublic, agent_secret_enc: seal(o.secret, agent.toString()) };
       }
       let sponsorTx: string | null = null;
-      if (!(await o.chain.accountExists(accountId))) sponsorTx = await o.chain.sponsor(accountId, sponsorYocto);
+      try {
+        if (!(await o.chain.accountExists(accountId))) sponsorTx = await o.chain.sponsor(accountId, sponsorYocto);
+      } catch (e) {
+        const msg = (e as Error).message;
+        if (/no sponsor account configured/.test(msg)) {
+          throw new ApiError(503, "sponsor_not_configured", "BFA can't create NEAR accounts right now: the server is missing NEAR_ACCOUNT_ID / NEAR_PRIVATE_KEY.");
+        }
+        throw new ApiError(502, "near_unavailable", `Couldn't create your NEAR account on testnet: ${msg.slice(0, 200)}. Try again in a minute.`);
+      }
       const updated = await o.users.update(u.id, { ...patch, near_account_id: accountId, wallet_status: u.wallet_status === "ready" ? "ready" : "funded" });
       return json(res, 200, {
         near_account_id: accountId,
@@ -311,7 +319,11 @@ export function consoleApi(o: ConsoleOptions) {
     } catch (e) {
       if (res.headersSent) res.end();
       else if (e instanceof ApiError) json(res, e.status, { error: { code: e.code, message: e.message } });
-      else json(res, 500, { error: { code: "internal", message: "internal error" } });
+      else {
+        // Log the cause (never request bodies or secrets); the browser gets a short reason.
+        console.error(`console ${req.method} ${path} failed:`, (e as Error)?.stack ?? e);
+        json(res, 500, { error: { code: "internal", message: `internal error: ${String((e as Error)?.message ?? e).slice(0, 200)}` } });
+      }
     }
     return true;
   };
