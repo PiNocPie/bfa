@@ -16,7 +16,7 @@ await build({
   logLevel: "warning",
 });
 copyFileSync("src/index.html", "dist/index.html");
-copyFileSync("../../site/mascot.svg", "dist/mascot.svg");
+copyFileSync("src/art/guide.svg", "dist/guide.svg");
 copyFileSync("src/pages/privacy.html", "dist/privacy.html");
 copyFileSync("src/pages/terms.html", "dist/terms.html");
 console.log("web: dist/index.html, dist/app.js");

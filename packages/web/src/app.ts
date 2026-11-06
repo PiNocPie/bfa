@@ -89,7 +89,7 @@ function home() {
       <p class="lede">Your agent walks in, finds the API it needs, reads the price on the tag, pays for one call and leaves with a receipt. You give it a key with a budget; your money stays in your own vault on NEAR.</p>
       <div class="cta"><button class="btn accent" data-go="${state.me ? "overview" : "signin"}">${state.me ? "Open your dashboard" : "Sign in with Google"}</button><button class="btn" data-go="apis">Walk the aisles</button></div>
     </div>
-    <div class="slab"><svg class="cat big-bb" width="210" height="210" role="img" aria-label="BB, the BFA cat"><use href="#bfa-cat"/></svg><div class="rcpt">
+    <div class="slab"><img class="big-guy" src="/guide.svg" width="220" height="234" alt="Nibs, the BFA guide"><div class="rcpt">
       <div class="receipt" aria-label="Example receipt">
         <div class="rh"><b>bfa</b><span>open 24h · ${esc(net)}</span></div>
         <dl>
@@ -161,7 +161,7 @@ function apis() {
   const aisles = [...groups].sort((a, b) => b[1].filter((l) => l.routable).length - a[1].filter((l) => l.routable).length || a[0].localeCompare(b[0]));
   return `<div class="page-head"><div><h1>The aisles</h1>
     <p>Everything your agent can buy here, with the price on the tag. Live from this gateway's registry: only reviewed APIs take payment, the rest are coming soon.</p></div></div>
-  <div class="store"><div>${aisles.map(([c, ls], i) => `<section class="aisle"><h2><svg class="cat" width="34" height="34" aria-hidden="true"><use href="#bfa-cat"/></svg>${esc(aisleName(c))} <small>aisle ${i + 1}</small></h2><div class="shelf">${ls.map(shelfItem).join("")}</div></section>`).join("") || `<p class="muted">Stocking the shelves…</p>`}</div>
+  <div class="store"><div>${aisles.map(([c, ls], i) => `<section class="aisle"><h2>${esc(aisleName(c))} <small>aisle ${i + 1}</small></h2><div class="shelf">${ls.map(shelfItem).join("")}</div></section>`).join("") || `<p class="muted">Stocking the shelves…</p>`}</div>
   ${basketPanel()}</div>`;
 }
 
@@ -186,7 +186,7 @@ and don't spend more than $0.01.</pre><div><button class="btn small ghost" data-
 function signin() {
   const c = state.cfg;
   return `<div class="signin">
-    <div class="bb"><svg class="cat" width="180" height="180" aria-hidden="true"><use href="#bfa-cat"/></svg><p>Hi, I'm BB. I keep the receipts.</p></div>
+    <div class="bb"><img src="/guide.svg" width="160" height="170" alt=""><p>Hi, I'm Nibs. I'll show you around.</p></div>
     <div class="form"><h2>Sign in</h2><p class="muted">New here? Signing in creates your account. We only see your email and name.</p>
     ${c?.google_client_id ? `<div class="gwrap"><div id="gbtn"></div></div>` : `<p class="sub">Google sign-in is not configured on this gateway yet.</p>`}
     ${c?.dev_login ? `<div class="or">or, for local testing</div><label class="field"><span>Email (dev sign-in)</span><input class="input" id="devemail" type="email" placeholder="you@example.com"></label><button class="btn gbtn" id="devlogin">Sign in without Google</button>` : ""}
@@ -359,11 +359,68 @@ function restoreKeyForm(m: Map<string, string | boolean> | null) {
   });
 }
 
+// ---------- guide ----------
+// One tip per page. "Got it" hides that page's tip; "Hide guide" hides them all. Remembered in this browser only.
+const GUIDE = "bfa.guide";
+function guideState(): { off: boolean; seen: string[] } {
+  try {
+    const g = JSON.parse(localStorage.getItem(GUIDE) ?? "{}");
+    return { off: g.off === true, seen: Array.isArray(g.seen) ? g.seen.filter((x: unknown) => typeof x === "string") : [] };
+  } catch {
+    return { off: false, seen: [] };
+  }
+}
+function saveGuide(g: { off: boolean; seen: string[] }) {
+  try {
+    localStorage.setItem(GUIDE, JSON.stringify(g));
+  } catch {
+    /* private mode: tips come back on reload */
+  }
+}
+
+function tipFor(v: string): { id: string; text: string } | null {
+  const w = state.me?.wallet;
+  switch (v) {
+    case "home":
+      return state.me ? { id: "home-in", text: "You're signed in. Open your dashboard to see your money and keys." } : { id: "home", text: "Hi, I'm Nibs. Sign in with Google and I'll walk you through it. It takes about a minute." };
+    case "signin":
+      return { id: "signin", text: "Use your Gmail. We only see your email and name, nothing else." };
+    case "overview":
+    case "wallet":
+      if (w?.status !== "ready") return { id: "setup", text: "First, press Create my wallet. Your browser does the signing for you; it takes about 30 seconds." };
+      if (v === "wallet") return { id: "wallet", text: "To add money, copy your top-up address and send USDC on Base. On testnet, get free test USDC at faucet.circle.com." };
+      return { id: "overview", text: "This is your money and what your agents spent today. Next: make an API key for your agent." };
+    case "keys":
+      return state.newSecret ? { id: "keys-new", text: "Copy this key now and paste it into your agent's settings. You won't see it again." } : { id: "keys", text: "Make one key per agent. A name and a daily limit are enough; the agent can't spend more than that." };
+    case "agents":
+      return { id: "agents", text: "Copy the line into your terminal and swap $BFA_API_KEY for your key. Then just ask your agent for data." };
+    case "apis":
+      return { id: "apis", text: "Add APIs to the basket to see what a task costs, then copy the prompt for your agent." };
+    case "usage":
+      return { id: "usage", text: "Every call your agents made, with its price. Empty or failed calls cost $0." };
+    default:
+      return null;
+  }
+}
+
+function renderGuide(v: string) {
+  const el = $("#guide")!;
+  const g = guideState();
+  const tip = tipFor(v);
+  if (!tip || g.off || g.seen.includes(tip.id)) {
+    el.innerHTML = `<button class="guide-ask" id="guideon" aria-label="Show tips again" title="Show tips again"><img src="/guide.svg" alt=""></button>`;
+    return;
+  }
+  el.innerHTML = `<div class="guide-card" role="note"><img src="/guide.svg" alt="Nibs" width="80" height="85">
+    <div class="bubble"><p>${esc(tip.text)}</p><div class="gb"><button class="btn small solid" id="guidegot" data-tip="${esc(tip.id)}">Got it</button><button class="btn link" id="guideoff">Hide tips</button></div></div></div>`;
+}
+
 function render() {
   const v = current();
   const typed = snapshotKeyForm();
   $("#app")!.innerHTML = `<div class="view">${VIEWS[v]!()}</div>`;
   restoreKeyForm(typed);
+  renderGuide(v);
   document.querySelectorAll<HTMLAnchorElement>(".navlinks a[data-go]").forEach((a) => (a.dataset.go === v ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
   const ab = $("#authbtn")!;
   ab.textContent = state.me ? "Dashboard" : "Sign in";
@@ -502,6 +559,18 @@ document.addEventListener("click", async (e) => {
     await api("POST", "/api/auth/logout", {});
     state.me = null;
     go("home");
+    return;
+  }
+  if (t.id === "guidegot" || t.id === "guideoff" || t.id === "guideon") {
+    const g = guideState();
+    if (t.id === "guidegot") g.seen = [...new Set([...g.seen, t.dataset.tip!])];
+    if (t.id === "guideoff") g.off = true;
+    if (t.id === "guideon") {
+      g.off = false;
+      g.seen = [];
+    }
+    saveGuide(g);
+    renderGuide(current());
     return;
   }
   if (t.dataset.go) {
