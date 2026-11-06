@@ -4,6 +4,7 @@
 // spends from the operator's NEAR-controlled wallet in this version.
 import { resolve } from "node:path";
 import { configFromEnv } from "@bfa/mcp/lib";
+import { usdToMicros } from "@bfa/core";
 import { chain } from "./chain.js";
 import { consoleApi } from "./console.js";
 import { sweeper as makeSweeper } from "./sweeper.js";
@@ -51,6 +52,9 @@ const api = consoleApi({
   registryDir: config.registryDir,
   ...(config.devRegistryDir && { devRegistryDir: config.devRegistryDir }),
   ...(sw && { sweeper: sw }),
+  ...(sw && config.network === "testnet" && env.BFA_TESTNET_GIFT_USD !== "0" && {
+    testGift: { atomic: usdToMicros(env.BFA_TESTNET_GIFT_USD ?? "1.015"), ledgerPath: resolve(stateDir, "test-gifts.json") },
+  }),
 });
 const gw = createGateway({
   config,

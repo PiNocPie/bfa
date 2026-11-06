@@ -62,6 +62,7 @@ export function chain(o: ChainOptions) {
   return {
     treasuryId: o.treasuryId,
     topUpFactory: o.topUpFactory,
+    usdcAddress: usdc.address as Hex,
 
     async accountExists(id: string): Promise<boolean> {
       try {

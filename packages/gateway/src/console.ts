@@ -1,4 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import { KeyPair } from "near-api-js";
 import { loadRegistry, type ReceiptStore } from "@bfa/core";
 import type { Hex } from "viem";
@@ -31,6 +33,8 @@ export interface ConsoleOptions {
   jwks?: JwksFetcher;
   /** Moves top-ups into vaults; enables POST /api/wallet/sweep. */
   sweeper?: Sweeper;
+  /** Testnet only: send each new wallet this much test USDC once (atomic, 6 decimals), recorded in `ledgerPath`. */
+  testGift?: { atomic: bigint; ledgerPath: string };
   now?: () => Date;
 }
 
@@ -73,6 +77,8 @@ function publicKey(k: ApiKeyRecord) {
 }
 
 const ONE_NEAR = 10n ** 24n;
+/** Users getting their test USDC right now (this process). */
+const gifting = new Set<string>();
 /** Users whose account is being sponsored right now (this process), so a double click can't pay twice. */
 const sponsoring = new Set<string>();
 
@@ -131,6 +137,7 @@ export function consoleApi(o: ConsoleOptions) {
         fee: { on_top_percent: "1.5" },
         agent_methods: ["sign_eip3009"],
         agent_allowance_yocto: allowance.toString(),
+        test_gift_usd: giftOn() ? (Number(o.testGift!.atomic) / 1e6).toFixed(3) : null,
       });
     }
 
@@ -187,7 +194,8 @@ export function consoleApi(o: ConsoleOptions) {
     const u = await currentUser(req);
 
     if (m === "GET" && path === "/api/me") {
-      return json(res, 200, { user: { email: u.email, name: u.name, created_at: u.created_at }, wallet: await wallet(u) });
+      const gifts = giftOn() ? await readGifts() : {};
+      return json(res, 200, { user: { email: u.email, name: u.name, created_at: u.created_at }, wallet: await wallet(u), test_gift_tx: gifts[u.id] ?? null, test_gift_sending: gifting.has(u.id) });
     }
 
     if (m === "POST" && path === "/api/wallet/start") {
@@ -236,7 +244,23 @@ export function consoleApi(o: ConsoleOptions) {
         throw new ApiError(409, "wallet_incomplete", `${!vault ? "vault not created yet" : ""}${!vault && !hasKey ? "; " : ""}${!hasKey ? "agent key not added yet" : ""}`);
       }
       await o.users.update(u.id, { wallet_status: "ready" });
-      return json(res, 200, { ok: true, wallet: await wallet({ ...u, wallet_status: "ready" }) });
+      // Testnet: start the one-time test-USDC top-up in the background so the user can try a paid call right away.
+      const willGift = giftOn() && !(await readGifts())[u.id] && !gifting.has(u.id);
+      if (willGift) void giftOnce({ ...u, wallet_status: "ready" }).catch((e) => console.error(`test USDC for a new wallet failed: ${(e as Error).message.slice(0, 200)}`));
+      return json(res, 200, { ok: true, wallet: await wallet({ ...u, wallet_status: "ready" }), test_gift: willGift ? "sending" : null });
+    }
+
+    if (m === "POST" && path === "/api/wallet/testgift") {
+      if (!giftOn()) throw new ApiError(404, "not_found", "test USDC is only handed out on testnet");
+      if (!o.chain || !u.near_account_id || u.wallet_status !== "ready") throw new ApiError(409, "wallet_not_ready", "set up your wallet first");
+      if ((await readGifts())[u.id]) throw new ApiError(409, "already_sent", "this account already got its test USDC");
+      if (gifting.has(u.id)) throw new ApiError(409, "in_progress", "your test USDC is on its way");
+      try {
+        const r = await giftOnce(u);
+        return json(res, 200, r);
+      } catch (e) {
+        throw new ApiError(502, "gift_failed", (e as Error).message.slice(0, 240));
+      }
     }
 
     if (m === "POST" && path === "/api/wallet/sweep") {
@@ -317,6 +341,39 @@ export function consoleApi(o: ConsoleOptions) {
     }
 
     throw new ApiError(404, "not_found", "no such API route");
+  }
+
+  // ---- testnet top-up: one gift of test USDC per user, sent to their top-up address so the real split runs ----
+  function giftOn(): boolean {
+    return o.network === "testnet" && !!o.testGift && !!o.sweeper && !!o.chain?.topUpFactory && o.testGift.atomic > 0n;
+  }
+  async function readGifts(): Promise<Record<string, string>> {
+    try {
+      return JSON.parse(await readFile(o.testGift!.ledgerPath, "utf8")) as Record<string, string>;
+    } catch {
+      return {};
+    }
+  }
+  async function recordGift(userId: string, tx: string) {
+    const all = { ...(await readGifts()), [userId]: tx };
+    await mkdir(dirname(o.testGift!.ledgerPath), { recursive: true });
+    const tmp = `${o.testGift!.ledgerPath}.${process.pid}.tmp`;
+    await writeFile(tmp, JSON.stringify(all, null, 2) + "\n", { mode: 0o600 });
+    await rename(tmp, o.testGift!.ledgerPath);
+  }
+  async function giftOnce(u: UserRecord): Promise<{ tx: string; swept_tx: string | null }> {
+    gifting.add(u.id);
+    try {
+      const vault = await o.chain!.vaultAddress(u.near_account_id!);
+      const topUp = await o.chain!.topUpAddress(vault);
+      if (!topUp) throw new Error("no top-up address");
+      const tx = await o.sweeper!.sendUsdc(topUp, o.testGift!.atomic);
+      await recordGift(u.id, tx);
+      const swept = await o.sweeper!.sweepFor(vault).catch(() => null);
+      return { tx, swept_tx: swept?.tx ?? null };
+    } finally {
+      gifting.delete(u.id);
+    }
   }
 
   return async function handle(req: IncomingMessage, res: ServerResponse, path: string): Promise<boolean> {

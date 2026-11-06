@@ -4,14 +4,14 @@ declare const google: any;
 
 type Config = {
   network: string; google_client_id: string | null; dev_login: boolean; treasury_id: string | null;
-  top_up_factory: string | null; agent_allowance_yocto: string;
+  top_up_factory: string | null; agent_allowance_yocto: string; test_gift_usd?: string | null;
 };
 type Vault = { daily_limit: string; spent_today: string; allowed_to: string[]; paused: boolean };
 type Wallet = {
   status: "none" | "funded" | "ready"; near_account_id: string | null; agent_public_key: string | null; treasury_id?: string;
   vault_address?: string; vault?: Vault | null; usdc_balance_atomic?: string | null; top_up_address?: string | null;
 };
-type Me = { user: { email: string; name: string | null }; wallet: Wallet };
+type Me = { user: { email: string; name: string | null }; wallet: Wallet; test_gift_tx?: string | null; test_gift_sending?: boolean };
 type Listing = { id: string; name: string; provider: string; categories: string[]; price_usd: string; charges_empty_results: boolean; networks?: string[]; routable: boolean; review_status: string; not_routable_reason: string | null; description?: string; example_input?: Record<string, unknown> };
 type Routing = { prefer: string[]; strict: boolean };
 type Key = { id: string; name: string; prefix: string; routing?: Routing; created_at: string; expires_at: string; revoked_at: string | null; daily_limit_usd: string; per_api_limits: { listing_id: string; kind: string; value: string | number }[]; scopes: string[]; listing_access: { mode: string; listing_ids: string[] } };
@@ -259,8 +259,16 @@ function walletView() {
   const w = state.me!.wallet;
   if (w.status !== "ready") return consoleWrap("wallet", setupPanel());
   const v = w.vault!;
-  return consoleWrap("wallet", `${statement(w, v, "wallet")}
+  const gift = state.cfg?.test_gift_usd
+    ? state.me!.test_gift_tx
+      ? `<div class="gift ok"><b>✓ BFA sent you ${esc(state.cfg.test_gift_usd)} test USDC.</b> <span>It lands in your vault as $${(Number(state.cfg.test_gift_usd) / 1.015).toFixed(2)} after the 1.5% split. <a href="https://sepolia.basescan.org/tx/${esc(state.me!.test_gift_tx)}">See the transaction</a></span></div>`
+      : state.me!.test_gift_sending || state.busy === "Sending test USDC…"
+        ? `<div class="gift"><b>Sending you test USDC…</b> <span>It takes about a minute. This page updates by itself.</span></div>`
+        : `<div class="gift"><b>Want to try it right away?</b> <span>Get ${esc(state.cfg.test_gift_usd)} test USDC from BFA, once per account. Testnet only.</span><button class="btn small solid" id="testgift" ${state.busy ? "disabled" : ""}>Get test USDC</button></div>`
+    : "";
+  return consoleWrap("wallet", `${statement(w, v, "wallet")}${gift}
   <div class="panel"><div class="ph"><h3>Top up</h3><span class="sub">USDC on Base${state.cfg?.network === "testnet" ? " Sepolia" : ""} · 1.5% on top</span></div><div class="pb">
+    <p class="oneway" role="note"><b>Deposits are one-way.</b> Money you add can only be spent on API calls through BFA. It can't be withdrawn or refunded, so only add what you plan to use.</p>
     ${w.top_up_address ? `<div class="field"><span>Your top-up address</span><div class="addr"><code id="dep">${esc(w.top_up_address)}</code><button class="btn small ghost" data-copy="dep">Copy</button></div>
       <small>Send USDC only. A public contract splits each deposit: to add $10.00 send $10.15, and $10.00 goes to your vault, $0.15 to BFA. Nobody, BFA included, can send it anywhere else.</small></div>` : `<p class="sub">Top-up contract not configured on this gateway.</p>`}
     ${state.cfg?.network === "testnet" ? `<p class="sub">Test USDC: <a href="https://faucet.circle.com">faucet.circle.com</a>, pick Base Sepolia.</p>` : ""}
@@ -552,9 +560,10 @@ async function runSetup() {
         await new Promise((r) => setTimeout(r, 2500));
       }
     }
-    toast("Wallet ready");
+    toast(state.cfg?.test_gift_usd ? `Wallet ready. BFA is sending you ${state.cfg.test_gift_usd} test USDC.` : "Wallet ready");
     state.setupLog = [];
     await refresh();
+    if (state.cfg?.test_gift_usd) watchGift();
   } catch (e) {
     // Kept in the setup log (not state.err) so it survives switching pages.
     log(`✗ ${(e as Error).message}`);
@@ -562,6 +571,16 @@ async function runSetup() {
     state.busy = null;
     render();
   }
+}
+
+// Refresh every 10 s for up to 3 minutes while the test USDC is on its way.
+function watchGift() {
+  let n = 0;
+  const t = setInterval(async () => {
+    n++;
+    await refresh();
+    if (state.me?.test_gift_tx || n >= 18) clearInterval(t);
+  }, 10_000);
 }
 
 function download(blob: Blob, name: string) {
@@ -706,6 +725,16 @@ document.addEventListener("click", async (e) => {
     } else if (t.id === "pause") {
       await pauseVault(keyOrThrow(), state.me!.wallet.treasury_id!, !state.me!.wallet.vault!.paused);
       toast(state.me!.wallet.vault!.paused ? "Spending resumed" : "All spending paused");
+      await refresh();
+    } else if (t.id === "testgift") {
+      state.busy = "Sending test USDC…";
+      render();
+      try {
+        await api("POST", "/api/wallet/testgift", {});
+        toast("Test USDC is in your vault");
+      } finally {
+        state.busy = null;
+      }
       await refresh();
     } else if (t.id === "sweep") {
       state.busy = "Sweeping…";

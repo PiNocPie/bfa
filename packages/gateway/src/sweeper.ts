@@ -6,6 +6,7 @@ import type { Chain } from "./chain.js";
 import type { UserStore } from "./users.js";
 
 const FACTORY_ABI = parseAbi(["function sweep(address wallet)"]);
+const ERC20_TRANSFER = parseAbi(["function transfer(address to, uint256 amount) returns (bool)"]);
 
 export interface SweeperOptions {
   network: "testnet" | "mainnet";
@@ -75,6 +76,17 @@ export function sweeper(o: SweeperOptions) {
     return { tx, received_atomic: held.toString() };
   }
 
+  /** Sends USDC from the gas-paying address (testnet: BFA's faucet for new users). Waits for the receipt. */
+  async function sendUsdc(to: Hex, atomic: bigint): Promise<Hex> {
+    const w = await walletClient();
+    const from = w.account!.address;
+    const held = await o.chain.usdcBalance(from);
+    if (held < atomic) throw new Error(`BFA's test-USDC wallet ${from} is empty; it needs test USDC from faucet.circle.com (Base Sepolia)`);
+    const tx = await w.writeContract({ address: o.chain.usdcAddress, abi: ERC20_TRANSFER, functionName: "transfer", args: [to, atomic], chain: evmChain, account: w.account! });
+    await pub.waitForTransactionReceipt({ hash: tx, timeout: 120_000 });
+    return tx;
+  }
+
   async function sweepAll(): Promise<void> {
     if (busy) return;
     busy = true;
@@ -98,6 +110,10 @@ export function sweeper(o: SweeperOptions) {
   return {
     sweepFor,
     sweepAll,
+    sendUsdc,
+    async address(): Promise<Hex> {
+      return (await walletClient()).account!.address;
+    },
     start() {
       timer ??= setInterval(() => void sweepAll(), o.intervalMs ?? 60_000);
       timer.unref();
