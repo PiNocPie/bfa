@@ -89,7 +89,7 @@ function home() {
       <p class="lede">Your agent walks in, finds the API it needs, reads the price on the tag, pays for one call and leaves with a receipt. You give it a key with a budget; your money stays in your own vault on NEAR.</p>
       <div class="cta"><button class="btn accent" data-go="${state.me ? "overview" : "signin"}">${state.me ? "Open your dashboard" : "Sign in with Google"}</button><button class="btn" data-go="apis">Walk the aisles</button></div>
     </div>
-    <div class="slab"><img class="big-guy" src="/guide.svg" width="220" height="234" alt="Nibs, the BFA guide"><div class="rcpt">
+    <div class="slab"><img class="big-guy" src="/guide.svg" width="168" height="228" alt="Nibs, the BFA guide"><div class="rcpt">
       <div class="receipt" aria-label="Example receipt">
         <div class="rh"><b>bfa</b><span>open 24h · ${esc(net)}</span></div>
         <dl>
@@ -104,6 +104,7 @@ function home() {
       </div>
     </div></div>
   </section>
+  <div class="street" aria-hidden="true"><img src="/street.svg" width="642" height="114" alt=""></div>
   <section class="points">
     <div><h3>Your key, your vault.</h3><p>The wallet key is made in your browser and never sent to us. USDC sits in a vault only that key can change.</p></div>
     <div><h3>A limit on every key.</h3><p>Expiry, a daily cap, caps per API, an allowlist, and which provider to try first. All checked before anything is paid.</p></div>
@@ -186,7 +187,7 @@ and don't spend more than $0.01.</pre><div><button class="btn small ghost" data-
 function signin() {
   const c = state.cfg;
   return `<div class="signin">
-    <div class="bb"><img src="/guide.svg" width="160" height="170" alt=""><p>Hi, I'm Nibs. I'll show you around.</p></div>
+    <div class="bb"><img src="/guide.svg" width="140" height="190" alt=""><p>Hi, I'm Nibs. I'll show you around.</p></div>
     <div class="form"><h2>Sign in</h2><p class="muted">New here? Signing in creates your account. We only see your email and name.</p>
     ${c?.google_client_id ? `<div class="gwrap"><div id="gbtn"></div></div>` : `<p class="sub">Google sign-in is not configured on this gateway yet.</p>`}
     ${c?.dev_login ? `<div class="or">or, for local testing</div><label class="field"><span>Email (dev sign-in)</span><input class="input" id="devemail" type="email" placeholder="you@example.com"></label><button class="btn gbtn" id="devlogin">Sign in without Google</button>` : ""}
@@ -411,7 +412,7 @@ function renderGuide(v: string) {
     el.innerHTML = `<button class="guide-ask" id="guideon" aria-label="Show tips again" title="Show tips again"><img src="/guide.svg" alt=""></button>`;
     return;
   }
-  el.innerHTML = `<div class="guide-card" role="note"><img src="/guide.svg" alt="Nibs" width="80" height="85">
+  el.innerHTML = `<div class="guide-card" role="note"><img src="/guide.svg" alt="Nibs" width="70" height="95">
     <div class="bubble"><p>${esc(tip.text)}</p><div class="gb"><button class="btn small solid" id="guidegot" data-tip="${esc(tip.id)}">Got it</button><button class="btn link" id="guideoff">Hide tips</button></div></div></div>`;
 }
 

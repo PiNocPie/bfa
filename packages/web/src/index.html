@@ -104,7 +104,7 @@ td.mono{font-size:.86rem}
 .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px;align-items:center}
 .slab{background:var(--sign);border-radius:4px;padding:40px 36px 196px;display:flex;align-items:flex-start;align-self:center;justify-content:center;position:relative;overflow:hidden}
 .slab{justify-content:flex-end}
-.slab .big-guy{position:absolute;left:10px;bottom:6px;z-index:3;width:220px;height:auto;filter:drop-shadow(0 10px 14px rgba(4,19,12,.25))}
+.slab .big-guy{position:absolute;left:24px;bottom:10px;z-index:3;width:168px;height:auto;filter:drop-shadow(0 10px 14px rgba(4,19,12,.25))}
 .slab .rcpt{max-width:340px;margin-right:6px}
 .rcpt{position:relative;width:100%;max-width:380px;filter:drop-shadow(0 18px 22px rgba(4,19,12,.28))}
 .receipt{background:#fbfaf5;color:#0c0e0d;padding:22px 22px 34px;font:400 .78rem/1.75 var(--f-mono);
@@ -308,6 +308,14 @@ input[type=checkbox]{accent-color:var(--green-ink);width:16px;height:16px;margin
   .top .wrap{gap:14px}
 }
 @media (max-width:560px){.open24{display:none}}
+/* the street: little guys standing on pixel grass, one per aisle */
+.street{position:relative;margin:8px calc(50% - 50vw) 0;padding-top:12px;display:flex;justify-content:center;
+  background:linear-gradient(var(--paper),var(--paper)) top/100% calc(100% - 30px) no-repeat,
+  repeating-linear-gradient(90deg,#3f9e78 0 12px,#5fbf93 12px 24px) 0 calc(100% - 18px)/100% 6px no-repeat,
+  linear-gradient(#5fbf93,#5fbf93) 0 calc(100% - 12px)/100% 6px no-repeat,
+  linear-gradient(#7a5a3a,#7a5a3a) bottom/100% 12px no-repeat}
+.street img{display:block;max-width:min(642px,calc(100% - 32px));height:auto;margin-bottom:30px;image-rendering:pixelated}
+.street + .points{border-top:0}
 /* guide: the little guy explains each page */
 img[src$="guide.svg"]{image-rendering:pixelated}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) img[src$="guide.svg"]{filter:drop-shadow(1px 0 0 #d3eadd) drop-shadow(-1px 0 0 #d3eadd) drop-shadow(0 1px 0 #d3eadd) drop-shadow(0 -1px 0 #d3eadd)}}
@@ -331,7 +339,7 @@ footer.foot .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:
   .hero,.grid2,.menu,.band,.statement,.signin{grid-template-columns:minmax(0,1fr)}
   .hero{gap:28px}
   .slab{padding:40px 18px 150px;justify-content:center}
-  .slab .big-guy{width:150px;left:50%;bottom:4px;transform:translateX(-50%)}
+  .slab .big-guy{width:110px;left:50%;bottom:6px;transform:translateX(-50%)}
   .menu,.band{gap:24px}
   .band{padding:28px 22px}
   .points{grid-template-columns:minmax(0,1fr);gap:26px}
@@ -354,7 +362,7 @@ footer.foot .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:
 
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#home" data-go="home" aria-label="BFA home"><img src="/guide.svg" width="34" height="34" alt="">bfa</a>
+    <a class="brand" href="#home" data-go="home" aria-label="BFA home"><img src="/guide.svg" width="26" height="35" alt="">bfa</a>
     <nav class="navlinks" aria-label="Main">
       <a href="#apis" data-go="apis">Aisles</a>
       <a href="#agents" data-go="agents">Connect an agent</a>
