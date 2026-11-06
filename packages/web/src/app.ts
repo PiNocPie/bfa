@@ -505,9 +505,11 @@ async function runSetup() {
   const email = state.me!.user.email;
   const w = state.me!.wallet;
   const cfg = state.cfg!;
+  if (state.busy) return;
   state.busy = "Working…";
   state.err = null;
   state.setupLog = [];
+  render();
   try {
     let k = loadKey(email);
     if (!k || (w.near_account_id && k.account_id !== w.near_account_id)) {
@@ -539,9 +541,19 @@ async function runSetup() {
       if (!/already exists/i.test((e as Error).message)) throw e;
       log("✓ agent key already present");
     }
-    await api("POST", "/api/wallet/confirm", {});
-    log("✓ wallet ready");
+    state.busy = "Checking on NEAR…";
+    render();
+    for (let i = 0; ; i++) {
+      try {
+        await api("POST", "/api/wallet/confirm", {});
+        break;
+      } catch (e) {
+        if (i >= 9 || !/not (added|created) yet/.test((e as Error).message)) throw e;
+        await new Promise((r) => setTimeout(r, 2500));
+      }
+    }
     toast("Wallet ready");
+    state.setupLog = [];
     await refresh();
   } catch (e) {
     // Kept in the setup log (not state.err) so it survives switching pages.

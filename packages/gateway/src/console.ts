@@ -73,6 +73,8 @@ function publicKey(k: ApiKeyRecord) {
 }
 
 const ONE_NEAR = 10n ** 24n;
+/** Users whose account is being sponsored right now (this process), so a double click can't pay twice. */
+const sponsoring = new Set<string>();
 
 /** The signed-in console's JSON API under /api. Returns false when the path is not an /api route. */
 export function consoleApi(o: ConsoleOptions) {
@@ -202,14 +204,19 @@ export function consoleApi(o: ConsoleOptions) {
         patch = { agent_public_key: agentPublic, agent_secret_enc: seal(o.secret, agent.toString()) };
       }
       let sponsorTx: string | null = null;
+      const alreadyFunded = u.near_account_id === accountId && u.wallet_status !== "none";
+      if (sponsoring.has(u.id)) throw new ApiError(409, "setup_in_progress", "wallet setup is already running; wait a few seconds");
+      sponsoring.add(u.id);
       try {
-        if (!(await o.chain.accountExists(accountId))) sponsorTx = await o.chain.sponsor(accountId, sponsorYocto);
+        if (!alreadyFunded && !(await o.chain.accountExists(accountId))) sponsorTx = await o.chain.sponsor(accountId, sponsorYocto);
       } catch (e) {
         const msg = (e as Error).message;
         if (/no sponsor account configured/.test(msg)) {
           throw new ApiError(503, "sponsor_not_configured", "BFA can't create NEAR accounts right now: the server is missing NEAR_ACCOUNT_ID / NEAR_PRIVATE_KEY.");
         }
         throw new ApiError(502, "near_unavailable", `Couldn't create your NEAR account on testnet: ${msg.slice(0, 200)}. Try again in a minute.`);
+      } finally {
+        sponsoring.delete(u.id);
       }
       const updated = await o.users.update(u.id, { ...patch, near_account_id: accountId, wallet_status: u.wallet_status === "ready" ? "ready" : "funded" });
       return json(res, 200, {
