@@ -304,7 +304,7 @@ input[type=checkbox]{accent-color:var(--green-ink);width:16px;height:16px;margin
 
 @media (max-width:900px){
   .store{grid-template-columns:minmax(0,1fr)}
-  .basket{position:static}
+  .basket,.slipwrap{position:static}
   .top .wrap{gap:14px}
 }
 @media (max-width:560px){.open24{display:none}}
@@ -316,6 +316,34 @@ input[type=checkbox]{accent-color:var(--green-ink);width:16px;height:16px;margin
   linear-gradient(#7a5a3a,#7a5a3a) bottom/100% 12px no-repeat}
 .street img{display:block;max-width:min(642px,calc(100% - 32px));height:auto;margin-bottom:30px;image-rendering:pixelated}
 .street + .points{border-top:0}
+/* the basket is a till slip: paper in both themes, torn bottom edge */
+.slipwrap{position:sticky;top:calc(env(safe-area-inset-top,0px) + 90px);filter:drop-shadow(0 12px 18px rgba(0,0,0,.16))}
+.basket.slip{position:static;max-height:calc(100vh - 120px);background:#fbfaf7;color:#0c0e0d;border:0;border-radius:0;padding:22px 20px 34px;gap:12px;font-family:var(--f-mono);font-size:.82rem;
+  -webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - 9px) no-repeat,conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/18px 9px repeat-x;
+          mask:linear-gradient(#000 0 0) top/100% calc(100% - 9px) no-repeat,conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/18px 9px repeat-x}
+.slip .rh{text-align:center;padding-bottom:12px;border-bottom:1px dashed #0c0e0d}
+.slip .rh b{display:block;font:900 1.5rem/1 var(--f-sans);letter-spacing:-.06em}
+.slip .rh span{color:#62655f}
+.slip ul{border-bottom:1px dashed #0c0e0d}
+.slip li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:10px 0;border-bottom:0;align-items:start}
+.slip li .nm{font:600 .9rem/1.3 var(--f-sans)}
+.slip li .nm small{display:block;font:400 .74rem/1.4 var(--f-mono);color:#62655f;margin-top:2px}
+.slip li .amt{display:grid;justify-items:end;gap:6px;font-weight:500}
+.slip .money.line{height:32px;max-width:7.5rem}
+.slip .money.line input{font-size:.86rem;text-align:right}
+.slip li .calls{color:#62655f;font-size:.72rem}
+.slip li .x{border:0;background:none;color:#62655f;font:400 .72rem/1 var(--f-mono);text-decoration:underline;cursor:pointer;padding:0}
+.slip li .q button{width:24px;height:24px;border:1px solid #d6d5cc;background:#fff;color:#0c0e0d;border-radius:3px;cursor:pointer;font:600 .85rem/1 var(--f-mono)}
+.slip .sum{display:flex;justify-content:space-between;font:600 1rem/1 var(--f-mono);color:#0c0e0d}
+.slip .fine{text-align:center;color:#62655f;font-size:.72rem}
+.slip .empty-b{color:#62655f;font-family:var(--f-sans);font-size:.9rem}
+.slip .field > span,.slip .label{color:#0c0e0d;font-family:var(--f-sans)}
+.slip .money{background:#fff;border-color:#d6d5cc}
+.slip .money input{color:#0c0e0d}
+.slip .money span{color:#62655f}
+.slip pre{background:#efeee7;color:#0c0e0d;font-size:.72rem;max-height:240px;white-space:pre-wrap;overflow-wrap:anywhere}
+.slip .btn.solid{background:#0c0e0d;border-color:#0c0e0d;color:#fbfaf7}
+.slip .btn.link{color:#0c0e0d;justify-self:center}
 /* guide: the little guy explains each page */
 img[src$="guide.svg"]{image-rendering:pixelated}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) img[src$="guide.svg"]{filter:drop-shadow(1px 0 0 #d3eadd) drop-shadow(-1px 0 0 #d3eadd) drop-shadow(0 1px 0 #d3eadd) drop-shadow(0 -1px 0 #d3eadd)}}

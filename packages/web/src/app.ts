@@ -35,12 +35,12 @@ const state: {
 } = { listings: [], keys: [], receipts: [], newSecret: null, busy: null, err: null, setupLog: [], keyForm: false, routeEdit: null, routeDraft: { prefer: [], strict: false }, basket: [], budget: "", keyMore: false };
 
 // ---------- basket (kept in this browser only) ----------
-type Line = { id: string; n: number };
+type Line = { id: string; usd: string };
 const BASKET = "bfa.basket";
 function loadBasket(): Line[] {
   try {
     const b = JSON.parse(localStorage.getItem(BASKET) ?? "[]") as Line[];
-    return Array.isArray(b) ? b.filter((l) => typeof l.id === "string" && Number.isInteger(l.n) && l.n > 0).slice(0, 20) : [];
+    return Array.isArray(b) ? b.filter((l) => typeof l.id === "string" && typeof l.usd === "string" && /^\d+(\.\d{0,6})?$/.test(l.usd)).slice(0, 20) : [];
   } catch {
     return [];
   }
@@ -52,7 +52,11 @@ function saveBasket() {
     /* private mode: the basket lives until reload */
   }
 }
-const lineCount = () => state.basket.reduce((a, l) => a + l.n, 0);
+const lineCount = () => state.basket.length;
+const callsFor = (usd: string, price: string) => {
+  const p = BigInt(atomic(price));
+  return p === 0n ? 0n : BigInt(atomic(usd)) / p;
+};
 
 async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, { method, headers: body === undefined ? {} : { "content-type": "application/json" }, ...(body !== undefined && { body: JSON.stringify(body) }) });
@@ -126,34 +130,37 @@ const aisleName = (c: string) => AISLE[c] ?? c.charAt(0).toUpperCase() + c.slice
 const onTestnet = (l: Listing) => !l.networks || l.networks.some((n) => n === "eip155:84532");
 
 function shelfItem(l: Listing) {
-  const inBasket = state.basket.find((x) => x.id === l.id)?.n ?? 0;
+  const inBasket = state.basket.some((x) => x.id === l.id);
   const stock = l.routable ? (state.cfg?.network === "testnet" && !onTestnet(l) ? "mainnet only" : "in stock") : l.review_status === "pending" ? "coming soon" : esc(l.review_status);
   const buyable = l.routable && !(state.cfg?.network === "testnet" && !onTestnet(l));
   return `<article class="item">
     <div class="box"><b>${esc(l.name)}</b><span class="tid">${esc(l.id)}</span>${l.description ? `<p>${esc(l.description)}</p>` : `<p>${esc(l.provider)}</p>`}</div>
     <div class="tag${buyable ? "" : " off"}"><span class="p">$${esc(l.price_usd)}<small>/call</small></span><span class="s">${stock}${l.charges_empty_results ? "" : "<br>empty = free"}</span></div>
-    <button class="btn small ${inBasket ? "solid" : "ghost"}" data-add="${esc(l.id)}">${inBasket ? `In basket (${inBasket}) · add one` : buyable ? "Add to basket" : "Add to basket (preview)"}</button>
+    ${inBasket ? `<button class="btn small solid" data-remove="${esc(l.id)}" title="Take it out of the basket">✓ In basket</button>` : `<button class="btn small ghost" data-add="${esc(l.id)}">${buyable ? "Add to basket" : "Add to basket (preview)"}</button>`}
   </article>`;
 }
 
 function basketPanel() {
   const lines = state.basket.map((x) => ({ x, l: state.listings.find((l) => l.id === x.id) })).filter((r) => r.l);
-  if (!lines.length) return `<aside class="basket" aria-label="Basket"><h3>Basket <span>0 items</span></h3><p class="empty-b">Add a few APIs to see what a task would cost. BFA gives your agent a cart tool that quotes the whole basket first, then pays once within your budget.</p></aside>`;
+  if (!lines.length) return `<div class="slipwrap"><aside class="basket slip" aria-label="Basket"><div class="rh"><b>bfa</b><span>your basket · empty</span></div><p class="empty-b">Add a few APIs to see what a task would cost. Your agent's cart tool quotes the whole basket first, then pays once within your budget.</p></aside></div>`;
   let total = 0n;
-  for (const r of lines) total += BigInt(atomic(r.l!.price_usd)) * BigInt(r.x.n);
+  for (const r of lines) total += BigInt(atomic(r.x.usd));
   const canBuy = (l: Listing) => l.routable && !(state.cfg?.network === "testnet" && !onTestnet(l));
   const preview = lines.filter((r) => !canBuy(r.l!));
   const budget = state.budget || (Number(total) / 1e6).toFixed(Math.max(2, (Number(total) / 1e6).toString().split(".")[1]?.length ?? 2));
-  const prompt = `Use BFA's cart tool. Put these calls in a basket and show me the itemized total first:\n${lines.map((r, i) => `${i + 1}. ${r.l!.id} × ${r.x.n} ($${r.l!.price_usd} each)`).join("\n")}\nCheck out only if the total is at most $${budget}. Fill in each call's input for my task.${preview.length ? `\nNote: ${preview.map((r) => r.l!.id).join(", ")} ${preview.length === 1 ? "is" : "are"} coming soon on BFA and can't be bought yet; skip ${preview.length === 1 ? "it" : "them"} for now.` : ""}`;
-  return `<aside class="basket" aria-label="Basket"><h3>Basket <span>${lineCount()} item${lineCount() === 1 ? "" : "s"}</span></h3>
-    <ul>${lines.map((r) => `<li><span><b style="font-weight:600">${esc(r.l!.name)}</b><br><span class="tid">$${esc(r.l!.price_usd)} each${canBuy(r.l!) ? "" : " · coming soon"}</span></span>
-      <span class="q"><button data-dec="${esc(r.x.id)}" aria-label="One less">−</button>${r.x.n}<button data-add="${esc(r.x.id)}" aria-label="One more">+</button></span></li>`).join("")}</ul>
-    <div class="sum"><span>${preview.length ? "Estimated total" : "Total"}</span><span>${usdFine(total)}</span></div>
-    ${preview.length ? `<p class="sub">Coming-soon items are a preview: they show what the task would cost once they're live. Nothing is charged for them.</p>` : ""}
-    <label class="field"><span>Your agent's budget for this</span><div class="money"><span>$</span><input id="budget" inputmode="decimal" value="${esc(budget)}"></div></label>
+  const prompt = `Use BFA's cart tool. For my task, spend at most this much on each API and show me the itemized total first:\n${lines.map((r, i) => `${i + 1}. ${r.l!.id}: up to $${r.x.usd} (about ${callsFor(r.x.usd, r.l!.price_usd)} call${callsFor(r.x.usd, r.l!.price_usd) === 1n ? "" : "s"} at $${r.l!.price_usd})`).join("\n")}\nCheck out only if the total is at most $${budget}. Fill in each call's input for my task.${preview.length ? `\nNote: ${preview.map((r) => r.l!.id).join(", ")} ${preview.length === 1 ? "is" : "are"} coming soon on BFA and can't be bought yet; skip ${preview.length === 1 ? "it" : "them"} for now.` : ""}`;
+  return `<div class="slipwrap"><aside class="basket slip" aria-label="Basket">
+    <div class="rh"><b>bfa</b><span>your basket · ${lineCount()} API${lineCount() === 1 ? "" : "s"}</span></div>
+    <ul>${lines.map((r) => `<li><span class="nm">${esc(r.l!.name)}<small>$${esc(r.l!.price_usd)} a call${canBuy(r.l!) ? "" : " · coming soon"}</small></span>
+      <span class="amt"><span class="money line"><span>$</span><input data-lusd="${esc(r.x.id)}" inputmode="decimal" value="${esc(r.x.usd)}" aria-label="How much to spend on ${esc(r.l!.name)}"></span>
+      <span class="calls">≈ ${callsFor(r.x.usd, r.l!.price_usd)} call${callsFor(r.x.usd, r.l!.price_usd) === 1n ? "" : "s"}</span><button class="x" data-remove="${esc(r.x.id)}" aria-label="Remove">remove</button></span></li>`).join("")}</ul>
+    <div class="sum"><span>${preview.length ? "EST. TOTAL" : "TOTAL"}</span><span>${usdFine(total)}</span></div>
+    ${preview.length ? `<p class="fine">coming-soon items are a preview. nothing is charged for them.</p>` : ""}
+    <label class="field"><span>Your agent's budget</span><small>Starts at the total; lower it to make the agent pick.</small><div class="money"><span>$</span><input id="budget" inputmode="decimal" value="${esc(budget)}"></div></label>
     <div class="stack"><span class="label">Tell your agent</span><pre id="bprompt">${esc(prompt)}</pre><button class="btn small solid" data-copy="bprompt">Copy prompt</button></div>
     <button class="btn link" id="emptybasket">Empty the basket</button>
-  </aside>`;
+    <p class="fine">thank you, come again</p>
+  </aside></div>`;
 }
 
 function apis() {
@@ -607,14 +614,12 @@ document.addEventListener("click", async (e) => {
       $("#keyform")?.remove();
       render();
     } else if (t.dataset.add) {
-      const line = state.basket.find((x) => x.id === t.dataset.add);
-      if (line) line.n = Math.min(20, line.n + 1);
-      else if (state.basket.length < 20) state.basket.push({ id: t.dataset.add, n: 1 });
+      const l = state.listings.find((x) => x.id === t.dataset.add);
+      if (l && !state.basket.some((x) => x.id === l.id) && state.basket.length < 20) state.basket.push({ id: l.id, usd: l.price_usd });
       saveBasket();
       render();
-    } else if (t.dataset.dec) {
-      const line = state.basket.find((x) => x.id === t.dataset.dec);
-      if (line && --line.n <= 0) state.basket = state.basket.filter((x) => x !== line);
+    } else if (t.dataset.remove) {
+      state.basket = state.basket.filter((x) => x.id !== t.dataset.remove);
       saveBasket();
       render();
     } else if (t.id === "emptybasket") {
@@ -714,6 +719,19 @@ document.addEventListener("toggle", (e) => {
 
 document.addEventListener("change", async (e) => {
   const t = e.target as HTMLInputElement;
+  if (t.dataset.lusd) {
+    const line = state.basket.find((x) => x.id === t.dataset.lusd);
+    try {
+      atomic(t.value);
+      if (line) line.usd = t.value.trim();
+      state.budget = "";
+      saveBasket();
+    } catch {
+      toast("Enter an amount like 0.50");
+    }
+    render();
+    return;
+  }
   if (t.id === "budget") {
     try {
       atomic(t.value);
