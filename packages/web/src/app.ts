@@ -408,8 +408,13 @@ function renderGuide(v: string) {
   const el = $("#guide")!;
   const g = guideState();
   const tip = tipFor(v);
-  if (!tip || g.off || g.seen.includes(tip.id)) {
+  // The homepage already has the big little guy, so the corner guide would repeat it.
+  if (v === "home") {
     el.innerHTML = "";
+    return;
+  }
+  if (!tip || g.off || g.seen.includes(tip.id)) {
+    el.innerHTML = `<button class="guide-ask" id="guideon" aria-label="Show tips again" title="Show tips again"><img src="/guide.svg" alt=""></button>`;
     return;
   }
   el.innerHTML = `<div class="guide-card" role="note"><img src="/guide.svg" alt="Nibs" width="70" height="95">
