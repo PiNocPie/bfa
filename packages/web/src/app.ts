@@ -342,12 +342,15 @@ function receiptsTable(n: number) {
 
 const usage = () => consoleWrap("usage", receiptsTable(200));
 
-const VIEWS: Record<string, () => string> = { home, apis, agents, signin, overview, wallet: walletView, keys: keysView, usage };
+const loading = () => `<p class="muted">Loading…</p>`;
+const VIEWS: Record<string, () => string> = { home, apis, agents, signin, overview, wallet: walletView, keys: keysView, usage, loading };
 
 // ---------- router ----------
 function current(): string {
   const h = location.hash.slice(1);
-  let v = VIEWS[h] ? h : "home";
+  let v = VIEWS[h] && h !== "loading" ? h : "home";
+  // Until /api/me answers we don't know yet whether you're signed in: don't flash the sign-in page.
+  if (CONSOLE.includes(v) && state.me === undefined) return "loading";
   if (CONSOLE.includes(v) && !state.me) v = "signin";
   if (v === "signin" && state.me) v = "overview";
   return v;

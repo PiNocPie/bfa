@@ -28,7 +28,7 @@ const privateKey =
 const NETWORK = "eip155:84532";
 const PORT = Number(process.env.PORT ?? 8411);
 
-const rs = new x402ResourceServer(new HTTPFacilitatorClient({ url: "https://x402.org/facilitator" })).register(
+const rs = new x402ResourceServer(new HTTPFacilitatorClient({ url: process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator" })).register(
   NETWORK,
   new ExactEvmScheme(),
 );

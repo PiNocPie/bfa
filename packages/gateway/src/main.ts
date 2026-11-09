@@ -52,6 +52,7 @@ const api = consoleApi({
   registryDir: config.registryDir,
   ...(config.devRegistryDir && { devRegistryDir: config.devRegistryDir }),
   ...(sw && { sweeper: sw }),
+  ...(env.BFA_FACILITATOR_URL && { facilitatorUrl: env.BFA_FACILITATOR_URL }),
   ...(sw && config.network === "testnet" && env.BFA_TESTNET_GIFT_USD !== "0" && {
     testGift: { atomic: usdToMicros(env.BFA_TESTNET_GIFT_USD ?? "1.015"), ledgerPath: resolve(stateDir, "test-gifts.json") },
   }),

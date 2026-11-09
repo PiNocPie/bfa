@@ -13,3 +13,4 @@ target/
 .claude/worktrees/
 .bfa-gateway/
 .bfa-gateway-*/
+.bfa-facilitator/

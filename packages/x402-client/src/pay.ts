@@ -175,6 +175,31 @@ function readSettlement(res: Response): { tx?: string; network?: string; payer?:
   }
 }
 
+/** Why the seller (its facilitator) refused a payment, from a 402 reply: PAYMENT-REQUIRED header or JSON body. */
+async function refusalReason(res: Response): Promise<string | undefined> {
+  const pick = (o: unknown): string | undefined => {
+    const r = o as { error?: unknown; invalidReason?: unknown; errorReason?: unknown } | null;
+    const v = r?.error ?? r?.invalidReason ?? r?.errorReason;
+    return typeof v === "string" && v ? v.slice(0, 160) : undefined;
+  };
+  // The facilitator's verdict comes back in PAYMENT-RESPONSE (errorReason) or PAYMENT-REQUIRED (error).
+  for (const name of ["PAYMENT-RESPONSE", "X-PAYMENT-RESPONSE", "PAYMENT-REQUIRED"]) {
+    const header = res.headers.get(name);
+    if (!header) continue;
+    try {
+      const why = pick(JSON.parse(Buffer.from(header, "base64").toString("utf8")));
+      if (why) return why;
+    } catch {
+      /* not base64 JSON */
+    }
+  }
+  try {
+    return pick(await res.clone().json());
+  } catch {
+    return undefined;
+  }
+}
+
 type Outcome = Pick<Receipt, "status" | "price_usd"> &
   Partial<Pick<Receipt, "scheme" | "sign_ms" | "network" | "payment_tx" | "http_status" | "output_valid" | "error">>;
 
@@ -260,13 +285,14 @@ export async function callListing(opts: CallOptions): Promise<CallResult> {
     });
   }
   if (res.status === 402) {
+    const why = await refusalReason(res);
     return finish({
       status: "unpaid_error",
       price_usd: "0",
       http_status: 402,
       error: {
         code: "payment_failed",
-        message: "payment was not accepted (price above listing, unsupported network, or insufficient USDC)",
+        message: `payment was not accepted${why ? `: ${why}` : " (price above listing, unsupported network, or insufficient USDC)"}`,
         next_action: "top_up",
       },
     });

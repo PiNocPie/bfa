@@ -37,6 +37,13 @@ export function sweeper(o: SweeperOptions) {
   const pub = createPublicClient({ chain: evmChain, transport: http() });
   let wallet: ReturnType<typeof createWalletClient> | undefined;
   let busy = false;
+  // One transaction at a time from this address: sweeps and test-USDC sends would otherwise race for the nonce.
+  let txQueue: Promise<unknown> = Promise.resolve();
+  const serial = <T>(fn: () => Promise<T>): Promise<T> => {
+    const run = txQueue.then(fn);
+    txQueue = run.catch(() => undefined);
+    return run;
+  };
 
   async function walletClient() {
     if (wallet) return wallet;
@@ -71,8 +78,12 @@ export function sweeper(o: SweeperOptions) {
     const held = await o.chain.usdcBalance(topUp);
     if (held === 0n) return null;
     const w = await walletClient();
-    const tx = await w.writeContract({ address: o.chain.topUpFactory, abi: FACTORY_ABI, functionName: "sweep", args: [vault], chain: evmChain, account: w.account! });
-    await pub.waitForTransactionReceipt({ hash: tx, timeout: 120_000 });
+    const factory = o.chain.topUpFactory;
+    const tx = await serial(async () => {
+      const h = await w.writeContract({ address: factory, abi: FACTORY_ABI, functionName: "sweep", args: [vault], chain: evmChain, account: w.account! });
+      await pub.waitForTransactionReceipt({ hash: h, timeout: 120_000 });
+      return h;
+    });
     return { tx, received_atomic: held.toString() };
   }
 
@@ -82,9 +93,11 @@ export function sweeper(o: SweeperOptions) {
     const from = w.account!.address;
     const held = await o.chain.usdcBalance(from);
     if (held < atomic) throw new Error(`BFA's test-USDC wallet ${from} is empty; it needs test USDC from faucet.circle.com (Base Sepolia)`);
-    const tx = await w.writeContract({ address: o.chain.usdcAddress, abi: ERC20_TRANSFER, functionName: "transfer", args: [to, atomic], chain: evmChain, account: w.account! });
-    await pub.waitForTransactionReceipt({ hash: tx, timeout: 120_000 });
-    return tx;
+    return serial(async () => {
+      const tx = await w.writeContract({ address: o.chain.usdcAddress, abi: ERC20_TRANSFER, functionName: "transfer", args: [to, atomic], chain: evmChain, account: w.account! });
+      await pub.waitForTransactionReceipt({ hash: tx, timeout: 120_000 });
+      return tx;
+    });
   }
 
   async function sweepAll(): Promise<void> {

@@ -33,6 +33,8 @@ export interface ConsoleOptions {
   jwks?: JwksFetcher;
   /** Moves top-ups into vaults; enables POST /api/wallet/sweep. */
   sweeper?: Sweeper;
+  /** The x402 facilitator the seller uses; /api/config reports its gas address. */
+  facilitatorUrl?: string;
   /** Testnet only: send each new wallet this much test USDC once (atomic, 6 decimals), recorded in `ledgerPath`. */
   testGift?: { atomic: bigint; ledgerPath: string };
   now?: () => Date;
@@ -138,6 +140,7 @@ export function consoleApi(o: ConsoleOptions) {
         agent_methods: ["sign_eip3009"],
         agent_allowance_yocto: allowance.toString(),
         test_gift_usd: giftOn() ? (Number(o.testGift!.atomic) / 1e6).toFixed(3) : null,
+        facilitator: await facilitatorInfo(),
       });
     }
 
@@ -246,7 +249,7 @@ export function consoleApi(o: ConsoleOptions) {
       await o.users.update(u.id, { wallet_status: "ready" });
       // Testnet: start the one-time test-USDC top-up in the background so the user can try a paid call right away.
       const willGift = giftOn() && !(await readGifts())[u.id] && !gifting.has(u.id);
-      if (willGift) void giftOnce({ ...u, wallet_status: "ready" }).catch((e) => console.error(`test USDC for a new wallet failed: ${(e as Error).message.slice(0, 200)}`));
+      if (willGift) void giftOnce({ ...u, wallet_status: "ready" }).catch((e) => console.error(`test USDC for a new wallet failed: ${errText(e)}`));
       return json(res, 200, { ok: true, wallet: await wallet({ ...u, wallet_status: "ready" }), test_gift: willGift ? "sending" : null });
     }
 
@@ -343,7 +346,23 @@ export function consoleApi(o: ConsoleOptions) {
     throw new ApiError(404, "not_found", "no such API route");
   }
 
-  // ---- testnet top-up: one gift of test USDC per user, sent to their top-up address so the real split runs ----
+    async function facilitatorInfo(): Promise<{ url: string; gas_payer: string | null } | null> {
+    if (!o.facilitatorUrl) return null;
+    try {
+      const r = await fetch(new URL("/healthz", o.facilitatorUrl), { signal: AbortSignal.timeout(2000) });
+      const j = (await r.json()) as { address?: string };
+      return { url: o.facilitatorUrl.startsWith("http://127.") ? "bfa (same host)" : o.facilitatorUrl, gas_payer: j.address ?? null };
+    } catch {
+      return { url: o.facilitatorUrl, gas_payer: null };
+    }
+  }
+
+  /** A viem/RPC error with its details and cause, for logs. */
+  function errText(e: unknown): string {
+    const x = e as { shortMessage?: string; message?: string; details?: string; cause?: { shortMessage?: string; message?: string; details?: string } };
+    return [x.shortMessage ?? x.message, x.details, x.cause?.shortMessage ?? x.cause?.message, x.cause?.details].filter(Boolean).join(" | ").slice(0, 600);
+  }
+// ---- testnet top-up: one gift of test USDC per user, sent to their top-up address so the real split runs ----
   function giftOn(): boolean {
     return o.network === "testnet" && !!o.testGift && !!o.sweeper && !!o.chain?.topUpFactory && o.testGift.atomic > 0n;
   }
@@ -367,7 +386,18 @@ export function consoleApi(o: ConsoleOptions) {
       const vault = await o.chain!.vaultAddress(u.near_account_id!);
       const topUp = await o.chain!.topUpAddress(vault);
       if (!topUp) throw new Error("no top-up address");
-      const tx = await o.sweeper!.sendUsdc(topUp, o.testGift!.atomic);
+      // Up to 3 tries: Chain Signatures signing rides on NEAR RPC, which fails now and then.
+      let tx = "";
+      for (let i = 0; ; i++) {
+        try {
+          tx = await o.sweeper!.sendUsdc(topUp, o.testGift!.atomic);
+          break;
+        } catch (e) {
+          if (i >= 2 || /is empty/.test((e as Error).message)) throw e;
+          console.error(`test USDC send failed (try ${i + 1}), retrying: ${errText(e)}`);
+          await new Promise((r) => setTimeout(r, 6000));
+        }
+      }
       await recordGift(u.id, tx);
       const swept = await o.sweeper!.sweepFor(vault).catch(() => null);
       return { tx, swept_tx: swept?.tx ?? null };
