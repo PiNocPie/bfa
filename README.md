@@ -138,7 +138,7 @@ Errors are JSON with a `code` and a `next_action` (`retry`, `retry_after`, `use_
 
 ## Per-key routing
 
-Each API key can carry an ordered list of preferred providers or APIs, for example "Gemini first, then Wan". You set it on the key form when you create the key, or later with **Edit** in the Routing column of the **API keys** page. A change applies on the agent's next call.
+Each API key can carry an ordered list of preferred providers or APIs, for example "Gemini first, then Wan". You set it under **More options** when you create the key, or later with **Set provider order** on the **API keys** page. A change applies on the agent's next call.
 
 - Each entry is a listing id (`google/gemini-image`) or `provider:<name>` for every listing from that provider.
 - When the agent asks for data by description (`run` with a `query`, or `quote` / `discover`), BFA tries the preferred listings first, in list order. The rest follow, ranked by reliability, price and latency as usual.
@@ -184,7 +184,7 @@ Listing is free and BFA takes no cut of call payments: agents pay your `payTo` d
 
 **Real and tested on testnet**
 - Chain Signatures derives the Base payer address and signs the channel deposit (txs above).
-- x402 V2 payments with `batch-settlement` and `exact`, through the public facilitator at `x402.org`.
+- x402 V2 payments with `batch-settlement` and `exact` in USDC on Base Sepolia, settled by BFA's own facilitator ([`packages/demo-seller/src/facilitator.ts`](packages/demo-seller/src/facilitator.ts)). We moved off the public `x402.org` facilitator after its gas wallet ran dry and every settlement failed; ours only pays gas, since each payment is an authorization the payer signed.
 - The demo seller reads live NEAR testnet state (`view_account`) and returns 503 without charging when every RPC fails.
 - All 7 MCP tools, driven by the official MCP client over stdio (`packages/mcp-server/scripts/smoke.mjs`).
 - Review gating by manifest hash, the daily cap and idempotency.
@@ -197,9 +197,20 @@ Listing is free and BFA takes no cut of call payments: agents pay your `payTo` d
 - The demo seller runs on localhost only. It is not deployed at a public https URL, so `submit_listing` on it correctly fails `public_https`.
 - `nansen/smart-money-holdings` is listed but not reviewed, so it does not route. We have not made a paid mainnet call to it.
 - Seller payout through NEAR Intents (`payout.via: "near-intents"`) is in the schema only. Nothing executes it yet.
-- The website ([`site/index.html`](site/index.html)) is a preview: sign-in (Privy), card top-ups, auto top-up and API keys are not wired to a backend yet.
+- Card top-ups and auto top-up are not built. The live console ([`packages/web`](packages/web)) has Google sign-in, wallet setup, test-USDC top-ups, API keys with routing, usage and the aisles; [`site/index.html`](site/index.html) is an older static preview.
 - The MCP server has no unit tests. It is covered only by the live smoke script.
 - Mainnet: not yet.
+
+## Roadmap
+
+Not built yet, in the order we plan to build them:
+
+1. **Mainnet.** Deploy the treasury contract on NEAR mainnet and the top-up contract on Base mainnet, with real USDC.
+2. **Top up with any token via NEAR Intents.** Pay in NEAR, ETH or any token on any chain; NEAR Intents swaps it into USDC on Base and delivers it to your top-up address, where the usual 1.5% split runs. NEAR Intents runs on mainnet only, so this comes with step 1.
+3. **Seller payouts via NEAR Intents.** Let sellers get paid in the token and chain they want (`payout.via: "near-intents"` is already in the listing schema).
+4. **A cart tool for agents.** Quote a whole basket of calls first, then pay once within a budget, instead of call by call.
+5. **Card top-ups and auto top-up**, with the same one-way rule: money added is for API calls only.
+6. **More shelves.** X, YouTube, TikTok and web pages are listed as coming soon.
 
 ## License
 

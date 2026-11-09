@@ -21,7 +21,7 @@ Leave any hidden "website" field empty: the organizers use it as a spam trap.
 
 Why these tracks: the organizers' hint for **agents** is "agent commerce, NEAR Intents, chain signatures" and for **business** is "AI agents, chain signatures — humans only set the constraints". That is exactly BFA: people set the limits, agents buy API calls, NEAR signs.
 
-## idea (paste as is, 1942 characters)
+## idea (paste as is, 1989 characters)
 
 BFA is the convenience store for AI agents: open 24 hours, for every agent. It is an open, pay-per-call API market: an agent connects over MCP, finds an API, sees the exact price, pays for one call in USDC over x402 and gets a receipt. No subscriptions, no per-provider accounts, no private key in the agent's config.
 
@@ -29,9 +29,11 @@ Every user's wallet is a vault in our treasury contract on NEAR, and its Base ad
 
 People sign in with Google. Their browser makes and keeps a burner NEAR wallet key and they sign their own vault setup. They create API keys with an expiry date, a daily cap, per-API caps, allow/block lists and routing: an ordered list of preferred providers, say Gemini then Wan, tried first when the agent asks by description. Top-ups go to a per-user address whose public contract splits each deposit: send $10.15, $10.00 lands in the vault, $0.15 is BFA's fee. Deposits are one-way: they can only be spent on API calls.
 
-Anyone can list an API by pull request. A reviewer pins the manifest's sha256, and editing the manifest stops routing until a new review. Failed and empty calls are not charged. BFA settles payments through its own x402 facilitator, so calls keep working when a public facilitator runs out of gas.
+Anyone can list an API by pull request. A reviewer pins the manifest's sha256, and editing the manifest stops routing until a new review. Failed and empty calls are not charged. BFA runs its own x402 facilitator.
 
 Live on testnet (NEAR testnet + Base Sepolia), recorded in the demo: a new user signs in, sets up a wallet, gets 1.015 test USDC (1.000 to the vault, 0.015 fee), makes a key with a $0.003 daily limit, and an agent pays three calls from that vault before the fourth is refused with limit_reached. NEAR signs once per payment channel (~10 s); each later call takes ~0.3 s.
+
+Next, on mainnet: top-ups in any token and seller payouts through NEAR Intents, plus a cart tool that quotes a whole basket first.
 
 ## X post: the public demo post (attach the 58 s video)
 
