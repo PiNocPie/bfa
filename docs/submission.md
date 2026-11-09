@@ -13,7 +13,7 @@ Deadline: **2026-11-14 23:59 UTC** (2026-11-15 06:59 Bangkok). One submission pe
 | tracks | `agents`, `business` |
 | nearAddress | *(your **mainnet** NEAR account for prize payout, e.g. `yourname.near`)* |
 | projectUrl | https://github.com/PiNocPie/bfa |
-| demoUrl | the link to your X demo post (live app: https://bfagateway-production.up.railway.app) |
+| demoUrl | https://x.com/0xxenonicle/status/2119851375081463890 (live app: https://bfagateway-production.up.railway.app) |
 | idea | the text below (under 2000 characters) |
 | consent | tick |
 
