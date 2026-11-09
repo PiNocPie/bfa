@@ -4,8 +4,8 @@
   "id": "bfa/x-posts",
   "provider": {
     "name": "BFA",
-    "url": "https://github.com/PiNocPie/nen",
-    "contact": "https://github.com/PiNocPie/nen/issues"
+    "url": "https://github.com/PiNocPie/bfa",
+    "contact": "https://github.com/PiNocPie/bfa/issues"
   },
   "name": "X posts search",
   "description": "Recent public posts on X for a keyword, hashtag or account, with author, time and engagement counts. Coming soon: not live yet, so it can't be bought. The price is the planned price.",
@@ -63,6 +63,6 @@
   "data": {
     "sources": "Planned BFA endpoint. Upstream sources will be chosen per their terms before launch.",
     "license_statement": "Not live. BFA will only launch this on sources whose terms allow agents to use the data this way.",
-    "terms_url": "https://github.com/PiNocPie/nen/blob/main/README.md"
+    "terms_url": "https://github.com/PiNocPie/bfa/blob/main/README.md"
   }
 }

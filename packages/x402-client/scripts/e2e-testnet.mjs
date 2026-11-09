@@ -39,7 +39,7 @@ const log = new ReceiptLog(join(state, "receipts.jsonl"));
 const listing = {
   manifest_version: 1,
   id: "bfa/near-account",
-  provider: { name: "BFA demo seller", url: "https://github.com/PiNocPie/nen", contact: "github:PiNocPie" },
+  provider: { name: "BFA demo seller", url: "https://github.com/PiNocPie/bfa", contact: "github:PiNocPie" },
   name: "NEAR testnet account state",
   description: "Balance, storage and contract flag for one NEAR testnet account, sold per call.",
   categories: ["near-native"],
