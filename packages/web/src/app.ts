@@ -142,13 +142,13 @@ function shelfItem(l: Listing) {
 
 function basketPanel() {
   const lines = state.basket.map((x) => ({ x, l: state.listings.find((l) => l.id === x.id) })).filter((r) => r.l);
-  if (!lines.length) return `<div class="slipwrap"><aside class="basket slip" aria-label="Basket"><div class="rh"><b>bfa</b><span>your basket · empty</span></div><p class="empty-b">Add a few APIs to see what a task would cost. Your agent's cart tool quotes the whole basket first, then pays once within your budget.</p></aside></div>`;
+  if (!lines.length) return `<div class="slipwrap"><aside class="basket slip" aria-label="Basket"><div class="rh"><b>bfa</b><span>your basket · empty</span></div><p class="empty-b">Pick the APIs you want your agent to use and how much to spend on each. You get one prompt to paste into your agent.</p></aside></div>`;
   let total = 0n;
   for (const r of lines) total += BigInt(atomic(r.x.usd));
   const canBuy = (l: Listing) => l.routable && !(state.cfg?.network === "testnet" && !onTestnet(l));
   const preview = lines.filter((r) => !canBuy(r.l!));
   const budget = state.budget || (Number(total) / 1e6).toFixed(Math.max(2, (Number(total) / 1e6).toString().split(".")[1]?.length ?? 2));
-  const prompt = `Use BFA's cart tool. For my task, spend at most this much on each API and show me the itemized total first:\n${lines.map((r, i) => `${i + 1}. ${r.l!.id}: up to $${r.x.usd} (about ${callsFor(r.x.usd, r.l!.price_usd)} call${callsFor(r.x.usd, r.l!.price_usd) === 1n ? "" : "s"} at $${r.l!.price_usd})`).join("\n")}\nCheck out only if the total is at most $${budget}. Fill in each call's input for my task.${preview.length ? `\nNote: ${preview.map((r) => r.l!.id).join(", ")} ${preview.length === 1 ? "is" : "are"} coming soon on BFA and can't be bought yet; skip ${preview.length === 1 ? "it" : "them"} for now.` : ""}`;
+  const prompt = `Use BFA for my task, and only these APIs. Inspect each price first, then pay per call with run, spending at most:\n${lines.map((r, i) => `${i + 1}. ${r.l!.id}: up to $${r.x.usd} (about ${callsFor(r.x.usd, r.l!.price_usd)} call${callsFor(r.x.usd, r.l!.price_usd) === 1n ? "" : "s"} at $${r.l!.price_usd})`).join("\n")}\nKeep the total under $${budget} and stop if a call is refused. Fill in each call's input for my task.${preview.length ? `\nNote: ${preview.map((r) => r.l!.id).join(", ")} ${preview.length === 1 ? "is" : "are"} coming soon on BFA and can't be bought yet; skip ${preview.length === 1 ? "it" : "them"} for now.` : ""}`;
   return `<div class="slipwrap"><aside class="basket slip" aria-label="Basket">
     <div class="rh"><b>bfa</b><span>your basket · ${lineCount()} API${lineCount() === 1 ? "" : "s"}</span></div>
     <ul>${lines.map((r) => `<li><span class="nm">${esc(r.l!.name)}<small>$${esc(r.l!.price_usd)} a call${canBuy(r.l!) ? "" : " · coming soon"}</small></span>
