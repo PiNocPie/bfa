@@ -35,28 +35,44 @@ Live on testnet (NEAR testnet + Base Sepolia), recorded in the demo: a new user 
 
 Next, on mainnet: top-ups in any token and seller payouts through NEAR Intents, plus a cart tool that quotes a whole basket first.
 
-## X post: the public demo post (attach the 58 s video)
+## X post: the public demo post (attach bfa-demo-full.mp4, 2:16)
 
-NEAR's rules count a public demo post as part of the entry, so post this before submitting and use its link as demoUrl. X counts each link as 23 characters: the post is 277, the reply 228.
+NEAR's rules count a public demo post as part of the entry, so post this before submitting and use the link to post 1 as demoUrl. X counts each link as 23 characters.
+
+Post 1 (266):
 
 ```
-An AI agent bought 3 API calls alone: $0.003 USDC, no account, no API key. Call 4 was refused at its limit.
+AI agents are growing too fast to keep building for humans first.
 
-Paid over x402 from its owner's vault, signed by NEAR Chain Signatures.
-
-BFA: the convenience store for AI agents.
+We built BFA, the convenience store for AI agents. You pick the APIs and a budget; your agent pays per call with x402 on Base, signed by NEAR Chain Signatures.
 
 bfagateway-production.up.railway.app
-#NEARHackathon @NEARProtocol
+#NEARHackathon
 ```
 
-Reply to it (thread):
+Reply 2 (268):
 
 ```
-Any API can list on BFA by pull request. Agents see the price on the tag, pay per call, and you choose which provider they try first.
+In the video: the agent bought 3 calls for $0.003 from its owner's vault. Call 4 was refused at its daily limit before any money moved.
 
-Built at NEAR HACKATHON. Open source: github.com/PiNocPie/bfa
-Which API should we stock next?
+1. Pick the APIs you prefer, set $ for each
+2. Copy one prompt to your agent
+3. It checks each price, pays per call, keeps receipts
 ```
 
-Videos: `bfa-demo.mp4` (1:57, for the form or YouTube) and `bfa-demo-short.mp4` (58 s, for X). Both are silent with burned-in captions and show real testnet transactions.
+Reply 3 (130):
+
+```
+Anyone can list an API on BFA by pull request.
+
+Open source: github.com/PiNocPie/bfa
+Which API should we stock next? @NEARProtocol
+```
+
+Optional reply 4, roadmap (185):
+
+```
+Next, on mainnet: top up with any token through NEAR Intents (it swaps into USDC on Base for you), seller payouts in any token, and a cart tool that quotes a whole basket before paying.
+```
+
+Videos: `bfa-demo-full.mp4` (2:16, the one to post) and `bfa-demo-short.mp4` (58 s). Both are silent with burned-in captions and show real testnet transactions. Don't use the older 1:57 cut: its basket prompt mentions a cart tool that isn't built.
